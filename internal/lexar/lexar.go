@@ -2,6 +2,8 @@ package lexar
 
 import (
 	"strings"
+
+	"github.com/UzStack/bug-lang/pkg/utils"
 )
 
 type tokenize struct {
@@ -81,9 +83,18 @@ func (t *tokenize) Tokenize(code string) []*Token {
 			t.FindString()
 			continue
 		}
+		if utils.InArray(char, []any{"+", "-", "/", "*", "%"}) {
+			t.Handle()
+			t.token(char, BinaryOperator)
+			continue
+		}
 		if char == ";" {
 			t.Handle()
 			t.token(char, Semicolon)
+		}
+		if char == "," {
+			t.Handle()
+			t.token(char, Comma)
 		}
 		if char == "=" {
 			t.Handle()

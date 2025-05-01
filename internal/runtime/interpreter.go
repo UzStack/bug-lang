@@ -45,8 +45,7 @@ func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Envir
 
 func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
 	var args []any
-	name, _ := node.Name.(string)
-	fn, _ := env.GetVariable(name, -1).(*types.NativeFunctionDeclaration)
+	fn, _ := env.GetVariable(node.Caller.Name, -1).(*types.NativeFunctionDeclaration)
 	for _, arg := range node.Args {
 		args = append(args, Interpreter(arg, env))
 	}

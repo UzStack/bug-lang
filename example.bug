@@ -1,4 +1,2 @@
-var name = "Azamov Samandar";
-var age = 20;
+var age = 10 + name(11, 12, name(10, 20));
 print(age);
-print(name);

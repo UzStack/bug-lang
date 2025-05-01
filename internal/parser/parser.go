@@ -33,19 +33,49 @@ func (p parser) IsEOF() bool {
 }
 
 func (p *parser) ParseAssignmentExpression() any {
-	left := p.ParserCallExpression()
+	left := p.ParseAdditiveExpression()
 	return left
 }
 
-func (p *parser) ParserCallExpression() any {
-	left := p.ParsePrimaryExpression()
-
-	if p.Next().Type == lexar.OpenParen {
-		identifier := p.Tokens[p.Index-2].Value
+func (p *parser) ParseCallExpression() any {
+	caller := p.ParsePrimaryExpression()
+	if p.At().Type == lexar.OpenParen {
+		p.Next()
 		return NewCallStatement(
 			p.At().Line,
-			identifier,
+			NewCaller(caller.(*IdentifierStatement).Value.(string)),
 			p.ParseArgs())
+	}
+	return caller
+}
+
+func (p *parser) ParseAdditiveExpression() any {
+	left := p.ParseMultiplicativeExpression()
+
+	for p.At().Value == "+" || p.At().Value == "-" {
+		operator := p.Next().Value
+		right := p.ParseMultiplicativeExpression()
+
+		left = NewBinaryExpression(
+			left,
+			right,
+			operator,
+		)
+	}
+	return left
+}
+
+func (p *parser) ParseMultiplicativeExpression() any {
+	left := p.ParseCallExpression()
+	for p.At().Value == "*" || p.At().Value == "/" || p.At().Value == "%" {
+		operator := p.Next().Value
+		right := p.ParseCallExpression()
+
+		left = NewBinaryExpression(
+			left,
+			right,
+			operator,
+		)
 	}
 	return left
 }
@@ -61,7 +91,6 @@ func (p *parser) ParseArgs() []any {
 func (p *parser) ParserArgList() []any {
 	args := []any{p.ParseAssignmentExpression()}
 	for p.Next().Type == lexar.Comma {
-		p.Next()
 		args = append(args, p.ParseAssignmentExpression())
 	}
 	if p.At().Type == lexar.CloseParen {
@@ -109,8 +138,9 @@ func (p *parser) ParsePrimaryExpression() any {
 	case lexar.Identifier:
 		return NewIdentifier(p.Next().Value)
 	default:
-		return 0
+		p.Next()
 	}
+	return 0
 }
 
 func (p *parser) ParseStatement() any {

@@ -9,6 +9,7 @@ const (
 	StringLiteral           NodeType = "StringLiteral"
 	Identifier              NodeType = "Identifier"
 	NumberLiteral           NodeType = "NumberLiteral"
+	BinaryOperator          NodeType = "BinaryOperator"
 )
 
 type Statement struct {
@@ -34,6 +35,22 @@ func NewProgram(line int) *Program {
 	}
 }
 
+type BinaryExpression struct {
+	Kind     NodeType
+	Left     any
+	Right    any
+	Operator any
+}
+
+func NewBinaryExpression(left, right any, operator any) *BinaryExpression {
+	return &BinaryExpression{
+		Kind:     BinaryOperator,
+		Left:     left,
+		Right:    right,
+		Operator: operator,
+	}
+}
+
 type IdentifierStatement struct {
 	Kind  NodeType
 	Value any
@@ -53,19 +70,19 @@ type BaseStatement struct {
 // Call Statement
 type CallStatement struct {
 	*Statement
-	Name  any
-	Value any
-	Args  []any
+	Caller *Caller
+	Value  any
+	Args   []any
 }
 
-func NewCallStatement(line int, name any, args []any) *CallStatement {
+func NewCallStatement(line int, caller *Caller, args []any) *CallStatement {
 	return &CallStatement{
 		Statement: &Statement{
 			Kind: CallStatementNode,
 			Line: line,
 		},
-		Name: name,
-		Args: args,
+		Caller: caller,
+		Args:   args,
 	}
 }
 
@@ -84,5 +101,17 @@ func NewVariableDeclaration(line int, name string, value any) *VariableDeclarati
 		},
 		Name:  name,
 		Value: value,
+	}
+}
+
+type Caller struct {
+	Kind any
+	Name string
+}
+
+func NewCaller(name string) *Caller {
+	return &Caller{
+		Kind: Identifier,
+		Name: name,
 	}
 }
