@@ -24,7 +24,7 @@ const (
 	EOF // end of file
 
 	// Keywords
-	Let
+	Var
 	Const
 	Fn
 	Return
@@ -45,7 +45,7 @@ type Token struct {
 }
 
 var Keywords = map[string]TokenType{
-	"var":      Let,
+	"var":      Var,
 	"const":    Const,
 	"endi":     Equals,
 	"def":      Fn,

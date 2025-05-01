@@ -2,8 +2,6 @@ package lexar
 
 import (
 	"strings"
-
-	"github.com/k0kubun/pp"
 )
 
 type tokenize struct {
@@ -18,6 +16,15 @@ func NewTokenize() *tokenize {
 	}
 }
 
+func (tokenize *tokenize) SaveAlpha() {
+	keyword, ok := Keywords[tokenize.TempWord]
+	if ok {
+		tokenize.token(tokenize.TempWord, keyword)
+		return
+	}
+	tokenize.token(tokenize.TempWord, Identifier)
+}
+
 func (tokenize *tokenize) token(value any, tokenType TokenType) {
 	tokenize.Tokens = append(tokenize.Tokens, &Token{
 		Value: value,
@@ -28,7 +35,7 @@ func (tokenize *tokenize) token(value any, tokenType TokenType) {
 
 func (t *tokenize) Handle() {
 	if IsAlpha(t.TempWord) {
-		t.token(t.TempWord, String)
+		t.SaveAlpha()
 	} else if IsNumber(t.TempWord) {
 		t.token(t.TempWord, Number)
 	}
@@ -39,7 +46,7 @@ func (tokenize tokenize) Get() []*Token {
 	return tokenize.Tokens
 }
 
-func (t *tokenize) Tokenize(code string) int {
+func (t *tokenize) Tokenize(code string) []*Token {
 	chars := strings.Split(code, "")
 	for _, char := range chars {
 		if char == "\n" {
@@ -47,6 +54,10 @@ func (t *tokenize) Tokenize(code string) int {
 		}
 		if char == ":" {
 			t.token(char, Colon)
+		}
+		if char == ";" {
+			t.Handle()
+			t.token(char, Semicolon)
 		}
 		if char == "=" {
 			t.Handle()
@@ -88,6 +99,5 @@ func (t *tokenize) Tokenize(code string) int {
 	}
 	t.Handle()
 	t.token("EndOfLine", EOF)
-	pp.Println(t.Get())
-	return 0
+	return t.Get()
 }

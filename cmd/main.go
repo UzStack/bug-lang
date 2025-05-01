@@ -4,11 +4,16 @@ import (
 	"fmt"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
+	"github.com/UzStack/bug-lang/internal/parser"
 )
 
 func main() {
 	tokenize := lexar.NewTokenize()
-	tokenize.Tokenize("age := 20")
-	fmt.Print(tokenize.Get())
+	tokens := tokenize.Tokenize(`
+	var age = 20;
+	print(age);
+	`)
+	parser := parser.NewParser(tokens)
+	parser.CreateAST()
 	fmt.Print("BugLang Forever\n")
 }
