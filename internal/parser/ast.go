@@ -34,16 +34,20 @@ func NewProgram(line int) *Program {
 	}
 }
 
-type BaseStatement struct {
-	Value any
+type IdentifierStatement struct {
 	Kind  NodeType
+	Value any
 }
 
-func NewBaseStatement(kind NodeType, value any) *BaseStatement {
-	return &BaseStatement{
-		Kind:  kind,
+func NewIdentifier(value any) *IdentifierStatement {
+	return &IdentifierStatement{
+		Kind:  Identifier,
 		Value: value,
 	}
+}
+
+type BaseStatement struct {
+	*Statement
 }
 
 // Call Statement
@@ -68,11 +72,11 @@ func NewCallStatement(line int, name any, args []any) *CallStatement {
 // Variable Declatation
 type VariableDeclaration struct {
 	*Statement
-	Name  any
+	Name  string
 	Value any
 }
 
-func NewVariableDeclaration(line int, name any, value any) *VariableDeclaration {
+func NewVariableDeclaration(line int, name string, value any) *VariableDeclaration {
 	return &VariableDeclaration{
 		Statement: &Statement{
 			Kind: VariableDeclarationNode,

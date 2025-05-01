@@ -8,11 +8,15 @@ type tokenize struct {
 	Tokens   []*Token
 	Line     int
 	TempWord string
+	Chars    []string
+	Index    int
 }
 
 func NewTokenize() *tokenize {
 	return &tokenize{
-		Line: 1,
+		Line:  1,
+		Chars: []string{},
+		Index: 0,
 	}
 }
 
@@ -45,15 +49,37 @@ func (t *tokenize) Handle() {
 func (tokenize tokenize) Get() []*Token {
 	return tokenize.Tokens
 }
+func (t *tokenize) Next() string {
+	t.Index++
+	return t.Chars[t.Index-1]
+}
+func (t *tokenize) At() string {
+	return t.Chars[t.Index]
+}
+
+func (t *tokenize) FindString() {
+	var str string
+	for t.At() != "\"" {
+		str += t.Next()
+	}
+	t.token(str, String)
+	t.Index++
+}
 
 func (t *tokenize) Tokenize(code string) []*Token {
-	chars := strings.Split(code, "")
-	for _, char := range chars {
+	t.Chars = strings.Split(code, "")
+	for t.Index < len(t.Chars) {
+		char := t.Next()
 		if char == "\n" {
 			t.Line++
 		}
 		if char == ":" {
 			t.token(char, Colon)
+		}
+		if char == "\"" {
+			t.Handle()
+			t.FindString()
+			continue
 		}
 		if char == ";" {
 			t.Handle()

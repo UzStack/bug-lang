@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
-	"github.com/k0kubun/pp/v3"
 )
 
 type parser struct {
@@ -40,6 +39,7 @@ func (p *parser) ParseAssignmentExpression() any {
 
 func (p *parser) ParserCallExpression() any {
 	left := p.ParsePrimaryExpression()
+
 	if p.Next().Type == lexar.OpenParen {
 		identifier := p.Tokens[p.Index-2].Value
 		return NewCallStatement(
@@ -80,8 +80,12 @@ func (p *parser) ParseVariableDeclaration() any {
 	p.Next()
 	identifier := p.Except(lexar.Identifier, "O'zgaruvchi nomi nato'g'ri")
 	p.Except(lexar.Equals, "O'zgaruvchi yaratishda xatolik yuz berdi")
+	value, ok := identifier.Value.(string)
+	if !ok {
+		panic(fmt.Sprintf("Error: %d", p.Index))
+	}
 	declatation := NewVariableDeclaration(
-		p.At().Line, identifier.Value,
+		p.At().Line, value,
 		p.ParseAssignmentExpression(),
 	)
 	if p.At().Type == lexar.Semicolon {
@@ -103,10 +107,7 @@ func (p *parser) ParsePrimaryExpression() any {
 			"value": p.Next().Value,
 		}
 	case lexar.Identifier:
-		return map[string]any{
-			"kind":  Identifier,
-			"value": p.Next().Value,
-		}
+		return NewIdentifier(p.Next().Value)
 	default:
 		return 0
 	}
@@ -126,6 +127,5 @@ func (p *parser) CreateAST() any {
 		stmt := p.ParseStatement()
 		program.Body = append(program.Body, stmt)
 	}
-	pp.Println(program)
-	return 0
+	return program
 }
