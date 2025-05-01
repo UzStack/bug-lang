@@ -7,6 +7,8 @@ const (
 	CallStatementNode       NodeType = "CallStatement"
 	ProgramNode             NodeType = "Program"
 	StringLiteral           NodeType = "StringLiteral"
+	Identifier              NodeType = "Identifier"
+	NumberLiteral           NodeType = "NumberLiteral"
 )
 
 type Statement struct {
@@ -32,13 +34,13 @@ func NewProgram(line int) *Program {
 	}
 }
 
-type TokenStatement struct {
+type BaseStatement struct {
 	Value any
 	Kind  NodeType
 }
 
-func NewTokenStatement(kind NodeType, value any) *TokenStatement {
-	return &TokenStatement{
+func NewBaseStatement(kind NodeType, value any) *BaseStatement {
+	return &BaseStatement{
 		Kind:  kind,
 		Value: value,
 	}

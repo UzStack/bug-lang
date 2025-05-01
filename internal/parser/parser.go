@@ -33,29 +33,41 @@ func (p parser) IsEOF() bool {
 	return p.At().Type != lexar.EOF
 }
 
-func (p *parser) ParseStatement() any {
-	switch p.At().Type {
-	case lexar.Var:
-		return p.ParseVariableDeclaration()
-	default:
-		return p.ParseAssignmentExpression()
-	}
-}
-
 func (p *parser) ParseAssignmentExpression() any {
 	left := p.ParserCallExpression()
 	return left
 }
 
 func (p *parser) ParserCallExpression() any {
+	left := p.ParsePrimaryExpression()
 	if p.Next().Type == lexar.OpenParen {
-		return NewCallStatement(p.At().Line, p.Tokens[p.Index-2].Value, p.ParseArgs())
+		identifier := p.Tokens[p.Index-2].Value
+		return NewCallStatement(
+			p.At().Line,
+			identifier,
+			p.ParseArgs())
 	}
-	return 0
+	return left
 }
 
 func (p *parser) ParseArgs() []any {
-	return []any{}
+	var args []any
+	if p.At().Type == lexar.CloseParen {
+		return args
+	}
+	return p.ParserArgList()
+}
+
+func (p *parser) ParserArgList() []any {
+	args := []any{p.ParseAssignmentExpression()}
+	for p.Next().Type == lexar.Comma {
+		p.Next()
+		args = append(args, p.ParseAssignmentExpression())
+	}
+	if p.At().Type == lexar.CloseParen {
+		p.Next()
+	}
+	return args
 }
 
 func (p *parser) Except(tokenType lexar.TokenType, errMsg string) *lexar.Token {
@@ -68,13 +80,46 @@ func (p *parser) ParseVariableDeclaration() any {
 	p.Next()
 	identifier := p.Except(lexar.Identifier, "O'zgaruvchi nomi nato'g'ri")
 	p.Except(lexar.Equals, "O'zgaruvchi yaratishda xatolik yuz berdi")
-	declatation := NewVariableDeclaration(p.At().Line, NewTokenStatement(StringLiteral, identifier.Value), p.Next().Value)
+	declatation := NewVariableDeclaration(
+		p.At().Line, identifier.Value,
+		p.ParseAssignmentExpression(),
+	)
 	if p.At().Type == lexar.Semicolon {
 		p.Next()
 	}
 	return declatation
 }
 
+func (p *parser) ParsePrimaryExpression() any {
+	switch p.At().Type {
+	case lexar.Number:
+		return map[string]any{
+			"kind":  NumberLiteral,
+			"value": p.Next().Value,
+		}
+	case lexar.String:
+		return map[string]any{
+			"kind":  StringLiteral,
+			"value": p.Next().Value,
+		}
+	case lexar.Identifier:
+		return map[string]any{
+			"kind":  Identifier,
+			"value": p.Next().Value,
+		}
+	default:
+		return 0
+	}
+}
+
+func (p *parser) ParseStatement() any {
+	switch p.At().Type {
+	case lexar.Var:
+		return p.ParseVariableDeclaration()
+	default:
+		return p.ParseAssignmentExpression()
+	}
+}
 func (p *parser) CreateAST() any {
 	program := NewProgram(1)
 	for p.IsEOF() {

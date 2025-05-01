@@ -11,7 +11,7 @@ func main() {
 	tokenize := lexar.NewTokenize()
 	tokens := tokenize.Tokenize(`
 	var age = 20;
-	print(age);
+	print(age(name));
 	`)
 	parser := parser.NewParser(tokens)
 	parser.CreateAST()
