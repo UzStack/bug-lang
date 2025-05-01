@@ -10,7 +10,11 @@ import (
 )
 
 func main() {
-	code, err := os.ReadFile("example.bug")
+	args := os.Args
+	if len(args) <= 1 {
+		panic("Fayil kiritilmadi")
+	}
+	code, err := os.ReadFile(args[1])
 	if err != nil {
 		panic(err.Error())
 	}

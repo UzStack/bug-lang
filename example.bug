@@ -1,2 +1,4 @@
-var age = "Hello world";
+var name = "Azamov Samandar";
+var age = 20;
 print(age);
+print(name);
