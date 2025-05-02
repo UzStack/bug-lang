@@ -68,6 +68,13 @@ func (t *tokenize) FindString() {
 	t.Index++
 }
 
+func (t *tokenize) FindEnd() {
+	for t.At() != ";" {
+		t.Next()
+	}
+	t.Next()
+}
+
 func (t *tokenize) Tokenize(code string) []*Token {
 	t.Chars = strings.Split(code, "")
 	for t.Index < len(t.Chars) {
@@ -81,6 +88,11 @@ func (t *tokenize) Tokenize(code string) []*Token {
 		if char == "\"" {
 			t.Handle()
 			t.FindString()
+			continue
+		}
+		if char == "!" && t.At() == "!" {
+			t.Handle()
+			t.FindEnd()
 			continue
 		}
 		if utils.InArray(char, []any{"+", "-", "/", "*", "%"}) {

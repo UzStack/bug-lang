@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
 )
@@ -40,11 +41,20 @@ func (p *parser) ParseAssignmentExpression() any {
 func (p *parser) ParseCallExpression() any {
 	caller := p.ParsePrimaryExpression()
 	if p.At().Type == lexar.OpenParen {
-		p.Next()
-		return NewCallStatement(
-			p.At().Line,
-			NewCaller(caller.(*IdentifierStatement).Value.(string)),
-			p.ParseArgs())
+		return &CallStatement{
+			Statement: &Statement{
+				Line: p.At().Line,
+				Kind: CallStatementNode,
+			},
+			Caller: &Caller{
+				Statement: &Statement{
+					Line: p.At().Line,
+					Kind: CallerNode,
+				},
+				Name: caller.(*IdentifierStatement).Value.(string),
+			},
+			Args: p.ParseArgs(),
+		}
 	}
 	return caller
 }
@@ -55,12 +65,15 @@ func (p *parser) ParseAdditiveExpression() any {
 	for p.At().Value == "+" || p.At().Value == "-" {
 		operator := p.Next().Value
 		right := p.ParseMultiplicativeExpression()
-
-		left = NewBinaryExpression(
-			left,
-			right,
-			operator,
-		)
+		left = &BinaryExpression{
+			Statement: &Statement{
+				Kind: BinaryOperatorNode,
+				Line: p.At().Line,
+			},
+			Left:     left,
+			Right:    right,
+			Operator: operator,
+		}
 	}
 	return left
 }
@@ -70,17 +83,21 @@ func (p *parser) ParseMultiplicativeExpression() any {
 	for p.At().Value == "*" || p.At().Value == "/" || p.At().Value == "%" {
 		operator := p.Next().Value
 		right := p.ParseCallExpression()
-
-		left = NewBinaryExpression(
-			left,
-			right,
-			operator,
-		)
+		left = &BinaryExpression{
+			Statement: &Statement{
+				Kind: BinaryOperatorNode,
+				Line: p.At().Line,
+			},
+			Left:     left,
+			Right:    right,
+			Operator: operator,
+		}
 	}
 	return left
 }
 
 func (p *parser) ParseArgs() []any {
+	p.Except(lexar.OpenParen, "Exprected open paren")
 	var args []any
 	if p.At().Type == lexar.CloseParen {
 		return args
@@ -113,10 +130,14 @@ func (p *parser) ParseVariableDeclaration() any {
 	if !ok {
 		panic(fmt.Sprintf("Error: %d", p.Index))
 	}
-	declatation := NewVariableDeclaration(
-		p.At().Line, value,
-		p.ParseAssignmentExpression(),
-	)
+	declatation := &VariableDeclaration{
+		Statement: &Statement{
+			Kind: VariableDeclarationNode,
+			Line: p.At().Line,
+		},
+		Name:  value,
+		Value: p.ParseAdditiveExpression(),
+	}
 	if p.At().Type == lexar.Semicolon {
 		p.Next()
 	}
@@ -126,33 +147,80 @@ func (p *parser) ParseVariableDeclaration() any {
 func (p *parser) ParsePrimaryExpression() any {
 	switch p.At().Type {
 	case lexar.Number:
-		return &NumberLiteralNode{
-			Kind:  NumberLiteral,
+		return &NumberLiteral{
+			Statement: &Statement{
+				Kind: NumberLiteralNode,
+				Line: p.At().Line,
+			},
 			Value: p.Next().Value,
 		}
 	case lexar.String:
-		return &StringLiteralNode{
-			Kind:  StringLiteral,
+		return &StringLiteral{
+			Statement: &Statement{
+				Kind: NumberLiteralNode,
+				Line: p.At().Line,
+			},
 			Value: p.Next().Value,
 		}
 	case lexar.Identifier:
-		return NewIdentifier(p.Next().Value)
+		return &IdentifierStatement{
+			Statement: &Statement{
+				Kind: IdentifierNode,
+				Line: p.At().Line,
+			},
+			Value: p.Next().Value,
+		}
 	default:
 		p.Next()
 	}
 	return 0
 }
 
+func (p *parser) ParseFnDeclaration() any {
+	p.Next()
+	identifier := p.Except(lexar.Identifier, "Funcsiya nomi nato'g'ri")
+	args := p.ParseArgs()
+	var params []*IdentifierStatement
+	for _, arg := range args {
+		param, ok := arg.(*IdentifierStatement)
+		if !ok {
+			log.Fatal("Funcsiya parametri nato'g'ri")
+		}
+		params = append(params, param)
+	}
+	var body []any
+	for p.At().Type != lexar.CloseBrace {
+		body = append(body, p.ParseStatement())
+	}
+	return &FunctionDeclaration{
+		Statement: &Statement{
+			Kind: FunctionDeclarationNode,
+			Line: p.At().Line,
+		},
+		Name:   identifier.Value.(string),
+		Params: params,
+		Body:   body,
+	}
+}
+
 func (p *parser) ParseStatement() any {
 	switch p.At().Type {
 	case lexar.Var:
 		return p.ParseVariableDeclaration()
+	case lexar.Fn:
+		return p.ParseFnDeclaration()
 	default:
 		return p.ParseAssignmentExpression()
 	}
 }
 func (p *parser) CreateAST() any {
-	program := NewProgram(1)
+	program := &Program{
+		Statement: &Statement{
+			Kind: ProgramNode,
+			Line: -1,
+		},
+		Body: []any{},
+	}
 	for p.IsEOF() {
 		stmt := p.ParseStatement()
 		program.Body = append(program.Body, stmt)

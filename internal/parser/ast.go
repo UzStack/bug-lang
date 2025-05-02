@@ -4,12 +4,14 @@ type NodeType string
 
 const (
 	VariableDeclarationNode NodeType = "VariableDeclaration"
+	FunctionDeclarationNode NodeType = "FunctionDeclaration"
 	CallStatementNode       NodeType = "CallStatement"
+	CallerNode              NodeType = "Caller"
 	ProgramNode             NodeType = "Program"
-	StringLiteral           NodeType = "StringLiteral"
-	Identifier              NodeType = "Identifier"
-	NumberLiteral           NodeType = "NumberLiteral"
-	BinaryOperator          NodeType = "BinaryOperator"
+	StringLiteralNode       NodeType = "StringLiteral"
+	IdentifierNode          NodeType = "Identifier"
+	NumberLiteralNode       NodeType = "NumberLiteral"
+	BinaryOperatorNode      NodeType = "BinaryOperator"
 )
 
 type Statement struct {
@@ -18,7 +20,7 @@ type Statement struct {
 }
 
 type Expression struct {
-	Statement
+	*Statement
 }
 
 type Program struct {
@@ -26,41 +28,16 @@ type Program struct {
 	Body []any
 }
 
-func NewProgram(line int) *Program {
-	return &Program{
-		Statement: &Statement{
-			Kind: ProgramNode,
-			Line: line,
-		},
-	}
-}
-
 type BinaryExpression struct {
-	Kind     NodeType
+	*Statement
 	Left     any
 	Right    any
 	Operator any
 }
 
-func NewBinaryExpression(left, right any, operator any) *BinaryExpression {
-	return &BinaryExpression{
-		Kind:     BinaryOperator,
-		Left:     left,
-		Right:    right,
-		Operator: operator,
-	}
-}
-
 type IdentifierStatement struct {
-	Kind  NodeType
+	*Statement
 	Value any
-}
-
-func NewIdentifier(value any) *IdentifierStatement {
-	return &IdentifierStatement{
-		Kind:  Identifier,
-		Value: value,
-	}
 }
 
 type BaseStatement struct {
@@ -75,17 +52,6 @@ type CallStatement struct {
 	Args   []any
 }
 
-func NewCallStatement(line int, caller *Caller, args []any) *CallStatement {
-	return &CallStatement{
-		Statement: &Statement{
-			Kind: CallStatementNode,
-			Line: line,
-		},
-		Caller: caller,
-		Args:   args,
-	}
-}
-
 // Variable Declatation
 type VariableDeclaration struct {
 	*Statement
@@ -93,35 +59,24 @@ type VariableDeclaration struct {
 	Value any
 }
 
-func NewVariableDeclaration(line int, name string, value any) *VariableDeclaration {
-	return &VariableDeclaration{
-		Statement: &Statement{
-			Kind: VariableDeclarationNode,
-			Line: line,
-		},
-		Name:  name,
-		Value: value,
-	}
-}
-
 type Caller struct {
-	Kind any
+	*Statement
 	Name string
 }
 
-func NewCaller(name string) *Caller {
-	return &Caller{
-		Kind: Identifier,
-		Name: name,
-	}
-}
-
-type NumberLiteralNode struct {
-	Kind  NodeType
+type NumberLiteral struct {
+	*Statement
 	Value any
 }
 
-type StringLiteralNode struct {
-	Kind  NodeType
+type StringLiteral struct {
+	*Statement
 	Value any
+}
+
+type FunctionDeclaration struct {
+	*Statement
+	Name   string
+	Params []*IdentifierStatement
+	Body   []any
 }

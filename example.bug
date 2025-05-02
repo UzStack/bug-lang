@@ -1,4 +1,11 @@
-var age = 10 * 10 - 20;
-print(age);
-print(10 + 20);
-print("Dattebayo")
+var first_name = "Samandar";
+var last_name = "Azamov";
+
+func name(){
+    var age = 10;
+    print(age, first_name);
+    print("salom");
+    print("qalaysan");
+}
+
+name()

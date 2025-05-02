@@ -1,17 +1,20 @@
 package types
 
+import "github.com/UzStack/bug-lang/internal/parser"
+
 type RuntimeTypes string
 
 const (
-	String RuntimeTypes = "String"
-	Number RuntimeTypes = "Number"
+	String   RuntimeTypes = "String"
+	Number   RuntimeTypes = "Number"
+	Function RuntimeTypes = "Function"
 )
 
 type FunctionDeclaration struct {
 	Name   any
-	Params []any
-	Body   map[string]any
-	Type   string
+	Params []*parser.IdentifierStatement
+	Body   []any
+	Type   RuntimeTypes
 }
 
 type NativeFunctionDeclaration struct {
