@@ -10,9 +10,15 @@ import (
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	switch node := astBody.(type) {
 	case *parser.NumberLiteralNode:
-		return node
+		return &types.RuntimeValue{
+			Type:  types.Number,
+			Value: node.Value,
+		}
 	case *parser.StringLiteralNode:
-		return node
+		return &types.RuntimeValue{
+			Type:  types.Number,
+			Value: node.Value,
+		}
 	case *parser.Program:
 		return EvalProgram(node, env)
 	case *parser.IdentifierStatement:
@@ -43,8 +49,8 @@ func EvalProgram(node *parser.Program, env *enviroment.Enviroment) any {
 }
 
 func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Enviroment) any {
-	left, _ := utils.Str2Int(Interpreter(node.Left, env).(*parser.NumberLiteralNode).Value)
-	right, _ := utils.Str2Int(Interpreter(node.Right, env).(*parser.NumberLiteralNode).Value)
+	left, _ := utils.Str2Int(Interpreter(node.Left, env).(*types.RuntimeValue).Value)
+	right, _ := utils.Str2Int(Interpreter(node.Right, env).(*types.RuntimeValue).Value)
 	var value any
 	switch node.Operator {
 	case "+":
@@ -59,8 +65,8 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 		value = left % right
 	}
 
-	return &parser.NumberLiteralNode{
-		Kind:  parser.NumberLiteral,
+	return &types.RuntimeValue{
+		Type:  types.String,
 		Value: value,
 	}
 }
