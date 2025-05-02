@@ -50,6 +50,17 @@ func (p *parser) ParseAssignmentExpression() any {
 	return left
 }
 
+func (p *parser) ParseReturnStatement() any {
+	p.Next()
+	return &ReturnStatement{
+		Statement: &Statement{
+			Kind: ReturnNode,
+			Line: p.At().Line,
+		},
+		Value: p.ParseAssignmentExpression(),
+	}
+}
+
 func (p *parser) ParseCallExpression() any {
 	caller := p.ParsePrimaryExpression()
 
@@ -342,6 +353,8 @@ func (p *parser) ParseStatement() any {
 		return p.ParseIfStatement()
 	case lexar.For:
 		return p.ParseForStatement()
+	case lexar.Return:
+		return p.ParseReturnStatement()
 	default:
 		return p.ParseAssignmentExpression()
 	}

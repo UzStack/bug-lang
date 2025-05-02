@@ -37,3 +37,7 @@ type FlowValue struct {
 	Type    RuntimeTypes
 	Catched bool
 }
+
+type ReturnValue struct {
+	Value any
+}

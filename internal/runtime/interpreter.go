@@ -42,10 +42,18 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return EvalForStatement(node, env)
 	case *parser.AssignmentExpression:
 		return EvalAssignmentExpression(node, env)
+	case *parser.ReturnStatement:
+		return EvalReturnStatement(node, env)
 	default:
 		// fmt.Printf("Tip: %T", astBody)
 	}
 	return nil
+}
+
+func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviroment) any {
+	return &types.ReturnValue{
+		Value: Interpreter(node.Value, env),
+	}
 }
 
 func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) any {
@@ -65,7 +73,10 @@ func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any
 func EvalIfStatement(node *parser.IfStatement, env *enviroment.Enviroment) any {
 	if Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
 		for _, statement := range node.Body {
-			Interpreter(statement, env)
+			result := Interpreter(statement, env)
+			if isReturn, response := IsReturn(result); isReturn {
+				return response
+			}
 		}
 		return &types.FlowValue{
 			Catched: true,
@@ -90,7 +101,10 @@ func EvalIfStatement(node *parser.IfStatement, env *enviroment.Enviroment) any {
 func EvalElseIfStatement(node *parser.ElseIfStatement, env *enviroment.Enviroment) any {
 	if Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
 		for _, statement := range node.Body {
-			Interpreter(statement, env)
+			result := Interpreter(statement, env)
+			if isReturn, response := IsReturn(result); isReturn {
+				return response
+			}
 		}
 		return &types.FlowValue{
 			Type:    types.Flow,
@@ -104,7 +118,10 @@ func EvalElseIfStatement(node *parser.ElseIfStatement, env *enviroment.Enviromen
 }
 func EvalElseStatement(node *parser.ElseStatement, env *enviroment.Enviroment) any {
 	for _, statement := range node.Body {
-		Interpreter(statement, env)
+		result := Interpreter(statement, env)
+		if isReturn, response := IsReturn(result); isReturn {
+			return response
+		}
 	}
 	return &types.FlowValue{
 		Catched: true,
@@ -173,6 +190,14 @@ func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Envir
 	return nil
 }
 
+func IsReturn(result any) (bool, any) {
+	switch val := result.(type) {
+	case *types.ReturnValue:
+		return true, val.Value
+	}
+	return false, nil
+}
+
 func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
 	var args []any
 	switch v := env.GetVariable(node.Caller.Name, -1).(type) {
@@ -187,6 +212,9 @@ func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
 		var result any
 		for _, statement := range v.Body {
 			result = Interpreter(statement, env)
+			if isReturn, response := IsReturn(result); isReturn {
+				return response
+			}
 		}
 		return result
 	default:

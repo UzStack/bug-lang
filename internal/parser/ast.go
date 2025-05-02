@@ -17,6 +17,7 @@ const (
 	ElseStatementNode        NodeType = "ElseStatement"
 	ForNode                  NodeType = "For"
 	AssignmentExpressionNode NodeType = "AssignmentExpression"
+	ReturnNode               NodeType = "Return"
 )
 
 type Statement struct {
@@ -113,5 +114,10 @@ type ForStatement struct {
 type AssignmentExpression struct {
 	*Statement
 	Owner any
+	Value any
+}
+
+type ReturnStatement struct {
+	*Statement
 	Value any
 }
