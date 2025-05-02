@@ -21,7 +21,10 @@ func NewEnv(owner *Enviroment) *Enviroment {
 
 func NewGlobalEnv() *Enviroment {
 	env := NewEnv(nil)
-	env.DeclareVariable("print", types.NewNativeFunctionDeclaration(std.Print), -1)
+	env.DeclareVariable("print", &types.NativeFunctionDeclaration{
+		Type: "native-function",
+		Call: std.Print,
+	}, -1)
 	return env
 }
 

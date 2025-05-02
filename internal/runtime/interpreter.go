@@ -1,15 +1,18 @@
 package runtime
 
 import (
-	"fmt"
-
 	"github.com/UzStack/bug-lang/internal/parser"
 	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
+	"github.com/UzStack/bug-lang/pkg/utils"
 )
 
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	switch node := astBody.(type) {
+	case *parser.NumberLiteralNode:
+		return node
+	case *parser.StringLiteralNode:
+		return node
 	case *parser.Program:
 		return EvalProgram(node, env)
 	case *parser.IdentifierStatement:
@@ -18,8 +21,10 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return CallStatement(node, env)
 	case *parser.VariableDeclaration:
 		return VariableDeclaration(node, env)
+	case *parser.BinaryExpression:
+		return EvalBinaryExpression(node, env)
 	default:
-		fmt.Printf("Tip: %T", astBody)
+		// fmt.Printf("Tip: %T", astBody)
 	}
 	return nil
 }
@@ -37,9 +42,31 @@ func EvalProgram(node *parser.Program, env *enviroment.Enviroment) any {
 	return lastInterpreted
 }
 
+func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Enviroment) any {
+	left, _ := utils.Str2Int(Interpreter(node.Left, env).(*parser.NumberLiteralNode).Value)
+	right, _ := utils.Str2Int(Interpreter(node.Right, env).(*parser.NumberLiteralNode).Value)
+	var value any
+	switch node.Operator {
+	case "+":
+		value = left + right
+	case "-":
+		value = left - right
+	case "*":
+		value = left * right
+	case "/":
+		value = left / right
+	case "%":
+		value = left % right
+	}
+
+	return &parser.NumberLiteralNode{
+		Kind:  parser.NumberLiteral,
+		Value: value,
+	}
+}
+
 func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Enviroment) any {
-	value, _ := node.Value.(map[string]any)
-	env.DeclareVariable(node.Name, value["value"], node.Line)
+	env.DeclareVariable(node.Name, Interpreter(node.Value, env), node.Line)
 	return nil
 }
 

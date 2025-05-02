@@ -126,14 +126,14 @@ func (p *parser) ParseVariableDeclaration() any {
 func (p *parser) ParsePrimaryExpression() any {
 	switch p.At().Type {
 	case lexar.Number:
-		return map[string]any{
-			"kind":  NumberLiteral,
-			"value": p.Next().Value,
+		return &NumberLiteralNode{
+			Kind:  NumberLiteral,
+			Value: p.Next().Value,
 		}
 	case lexar.String:
-		return map[string]any{
-			"kind":  StringLiteral,
-			"value": p.Next().Value,
+		return &StringLiteralNode{
+			Kind:  StringLiteral,
+			Value: p.Next().Value,
 		}
 	case lexar.Identifier:
 		return NewIdentifier(p.Next().Value)

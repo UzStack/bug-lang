@@ -115,3 +115,13 @@ func NewCaller(name string) *Caller {
 		Name: name,
 	}
 }
+
+type NumberLiteralNode struct {
+	Kind  NodeType
+	Value any
+}
+
+type StringLiteralNode struct {
+	Kind  NodeType
+	Value any
+}
