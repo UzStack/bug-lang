@@ -38,9 +38,26 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return EvalElseIfStatement(node, env)
 	case *parser.ElseStatement:
 		return EvalElseStatement(node, env)
-
+	case *parser.ForStatement:
+		return EvalForStatement(node, env)
+	case *parser.AssignmentExpression:
+		return EvalAssignmentExpression(node, env)
 	default:
 		// fmt.Printf("Tip: %T", astBody)
+	}
+	return nil
+}
+
+func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) any {
+	env.AssignmenVariable(node.Owner.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Value, env), node.Statement.Line)
+	return nil
+}
+
+func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any {
+	for Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
+		for _, statement := range node.Body {
+			Interpreter(statement, env)
+		}
 	}
 	return nil
 }
@@ -63,7 +80,6 @@ func EvalIfStatement(node *parser.IfStatement, env *enviroment.Enviroment) any {
 				Type:    types.Flow,
 			}
 		}
-
 	}
 	return &types.FlowValue{
 		Catched: false,

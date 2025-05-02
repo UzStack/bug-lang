@@ -3,18 +3,20 @@ package parser
 type NodeType string
 
 const (
-	VariableDeclarationNode NodeType = "VariableDeclaration"
-	FunctionDeclarationNode NodeType = "FunctionDeclaration"
-	CallStatementNode       NodeType = "CallStatement"
-	CallerNode              NodeType = "Caller"
-	ProgramNode             NodeType = "Program"
-	StringLiteralNode       NodeType = "StringLiteral"
-	IdentifierNode          NodeType = "Identifier"
-	NumberLiteralNode       NodeType = "NumberLiteral"
-	BinaryOperatorNode      NodeType = "BinaryOperator"
-	IfStatementNode         NodeType = "IfStatement"
-	ElseIfStatementNode     NodeType = "ElseIfStatement"
-	ElseStatementNode       NodeType = "ElseStatement"
+	VariableDeclarationNode  NodeType = "VariableDeclaration"
+	FunctionDeclarationNode  NodeType = "FunctionDeclaration"
+	CallStatementNode        NodeType = "CallStatement"
+	CallerNode               NodeType = "Caller"
+	ProgramNode              NodeType = "Program"
+	StringLiteralNode        NodeType = "StringLiteral"
+	IdentifierNode           NodeType = "Identifier"
+	NumberLiteralNode        NodeType = "NumberLiteral"
+	BinaryOperatorNode       NodeType = "BinaryOperator"
+	IfStatementNode          NodeType = "IfStatement"
+	ElseIfStatementNode      NodeType = "ElseIfStatement"
+	ElseStatementNode        NodeType = "ElseStatement"
+	ForNode                  NodeType = "For"
+	AssignmentExpressionNode NodeType = "AssignmentExpression"
 )
 
 type Statement struct {
@@ -100,4 +102,16 @@ type ElseIfStatement struct {
 type ElseStatement struct {
 	*Statement
 	Body []any
+}
+
+type ForStatement struct {
+	*Statement
+	Condition any
+	Body      []any
+}
+
+type AssignmentExpression struct {
+	*Statement
+	Owner any
+	Value any
 }

@@ -25,6 +25,18 @@ func NewGlobalEnv() *Enviroment {
 		Type: "native-function",
 		Call: std.Print,
 	}, -1)
+	env.DeclareVariable("true", &types.RuntimeValue{
+		Type:  "variable",
+		Value: true,
+	}, -1)
+	env.DeclareVariable("false", &types.RuntimeValue{
+		Type:  "variable",
+		Value: false,
+	}, -1)
+	env.DeclareVariable("null", &types.RuntimeValue{
+		Type:  "variable",
+		Value: nil,
+	}, -1)
 	return env
 }
 
@@ -33,6 +45,11 @@ func (e *Enviroment) DeclareVariable(name string, value any, line int) any {
 	if ok {
 		panic(fmt.Sprintf("O'zvaruvchi mavjud %s Line: %d", name, line))
 	}
+	e.Variables[name] = value
+	return value
+}
+
+func (e *Enviroment) AssignmenVariable(name string, value any, line int) any {
 	e.Variables[name] = value
 	return value
 }

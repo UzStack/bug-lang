@@ -36,6 +36,17 @@ func (p parser) IsEOF() bool {
 
 func (p *parser) ParseAssignmentExpression() any {
 	left := p.ParseLogicalExpression()
+	if p.At().Type == lexar.Equals {
+		p.Next()
+		return &AssignmentExpression{
+			Statement: &Statement{
+				Line: p.At().Line,
+				Kind: AssignmentExpressionNode,
+			},
+			Owner: left,
+			Value: p.ParseAdditiveExpression(),
+		}
+	}
 	return left
 }
 
@@ -241,6 +252,21 @@ func (p *parser) ParseVariableDeclaration() any {
 	return declatation
 }
 
+func (p *parser) ParseForStatement() any {
+	p.Next()
+	p.Except(lexar.OpenParen, "Except open paren FOR")
+	condition := p.ParseLogicalExpression()
+	p.Except(lexar.CloseParen, "Except close paren FOR")
+	return &ForStatement{
+		Statement: &Statement{
+			Kind: ForNode,
+			Line: p.At().Line,
+		},
+		Condition: condition,
+		Body:      p.ParseBody(),
+	}
+}
+
 func (p *parser) ParseBody() []any {
 	var body []any
 	p.Except(lexar.OpenBrace, "Except open brace")
@@ -314,6 +340,8 @@ func (p *parser) ParseStatement() any {
 		return p.ParseFnDeclaration()
 	case lexar.If:
 		return p.ParseIfStatement()
+	case lexar.For:
+		return p.ParseForStatement()
 	default:
 		return p.ParseAssignmentExpression()
 	}

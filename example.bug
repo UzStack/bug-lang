@@ -1,10 +1,18 @@
 var first_name = "Samandar";
 var last_name = "Azamov";
 
-if (20 == 10){
+if (20 == 20){
     print("teng");
-}elseif (100 > 200){
-    print("elseif")
+}elseif (100 < 200){
+    print("elseif");
 }else {
-    print("else")
+    print("else");
+}
+
+var a = 10;
+var b = 2;
+b = 20;
+for (b > a){
+    print(b)
+    b = 10;
 }
