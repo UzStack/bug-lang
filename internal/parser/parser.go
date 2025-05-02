@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
+	"github.com/UzStack/bug-lang/pkg/utils"
 )
 
 type parser struct {
@@ -34,12 +35,13 @@ func (p parser) IsEOF() bool {
 }
 
 func (p *parser) ParseAssignmentExpression() any {
-	left := p.ParseAdditiveExpression()
+	left := p.ParseLogicalExpression()
 	return left
 }
 
 func (p *parser) ParseCallExpression() any {
 	caller := p.ParsePrimaryExpression()
+
 	if p.At().Type == lexar.OpenParen {
 		return &CallStatement{
 			Statement: &Statement{
@@ -57,6 +59,100 @@ func (p *parser) ParseCallExpression() any {
 		}
 	}
 	return caller
+}
+
+func (p *parser) ParseIfStatement() any {
+	p.Next()
+	p.Except(lexar.OpenParen, "Except open paren IF Statement")
+	condition := p.ParseLogicalExpression()
+	p.Except(lexar.CloseParen, "Except close paren IF Statement")
+	body := p.ParseBody()
+	var chields []any
+	for p.At().Type == lexar.ElseIf {
+		chields = append(chields, p.ParseElseIfStatement())
+	}
+	if p.At().Type == lexar.Else {
+		chields = append(chields, p.ParseElseStatement())
+	}
+	return &IfStatement{
+		Statement: &Statement{
+			Kind: IfStatementNode,
+			Line: p.At().Line,
+		},
+		Condition: condition,
+		Body:      body,
+		Childs:    chields,
+	}
+}
+
+func (p *parser) ParseElseIfStatement() any {
+	p.Next()
+	p.Except(lexar.OpenParen, "Except open paren IF Statement")
+	condition := p.ParseLogicalExpression()
+	p.Except(lexar.CloseParen, "Except close paren IF Statement")
+	body := p.ParseBody()
+	return &ElseIfStatement{
+		Statement: &Statement{
+			Kind: ElseIfStatementNode,
+			Line: p.At().Line,
+		},
+		Condition: condition,
+		Body:      body,
+	}
+}
+
+func (p *parser) ParseElseStatement() any {
+	p.Next()
+	body := p.ParseBody()
+	return &ElseStatement{
+		Statement: &Statement{
+			Kind: ElseStatementNode,
+			Line: p.At().Line,
+		},
+		Body: body,
+	}
+}
+
+func (p *parser) ParseLogicalExpression() any {
+	left := p.ParseRelationalExpression()
+
+	for utils.InArray(p.At().Value, []any{"&&", "||"}) {
+		operator := p.Next().Value
+		right := p.ParseRelationalExpression()
+
+		return &BinaryExpression{
+			Statement: &Statement{
+				Kind: BinaryOperatorNode,
+				Line: p.At().Line,
+			},
+			Right:    right,
+			Left:     left,
+			Operator: operator,
+		}
+	}
+
+	return left
+}
+
+func (p *parser) ParseRelationalExpression() any {
+	left := p.ParseAdditiveExpression()
+
+	for utils.InArray(p.At().Value, []any{"==", ">=", "<=", "<", ">", "!="}) {
+		operator := p.Next().Value
+		right := p.ParseAdditiveExpression()
+
+		return &BinaryExpression{
+			Statement: &Statement{
+				Kind: BinaryOperatorNode,
+				Line: p.At().Line,
+			},
+			Right:    right,
+			Left:     left,
+			Operator: operator,
+		}
+	}
+
+	return left
 }
 
 func (p *parser) ParseAdditiveExpression() any {
@@ -80,6 +176,7 @@ func (p *parser) ParseAdditiveExpression() any {
 
 func (p *parser) ParseMultiplicativeExpression() any {
 	left := p.ParseCallExpression()
+
 	for p.At().Value == "*" || p.At().Value == "/" || p.At().Value == "%" {
 		operator := p.Next().Value
 		right := p.ParseCallExpression()
@@ -97,7 +194,8 @@ func (p *parser) ParseMultiplicativeExpression() any {
 }
 
 func (p *parser) ParseArgs() []any {
-	p.Except(lexar.OpenParen, "Exprected open paren")
+	p.Except(lexar.OpenParen, "Except open paren ARGS")
+	defer p.Except(lexar.CloseParen, "Except close paren ARGS")
 	var args []any
 	if p.At().Type == lexar.CloseParen {
 		return args
@@ -107,11 +205,9 @@ func (p *parser) ParseArgs() []any {
 
 func (p *parser) ParserArgList() []any {
 	args := []any{p.ParseAssignmentExpression()}
-	for p.Next().Type == lexar.Comma {
-		args = append(args, p.ParseAssignmentExpression())
-	}
-	if p.At().Type == lexar.CloseParen {
+	for p.At().Type == lexar.Comma {
 		p.Next()
+		args = append(args, p.ParseAssignmentExpression())
 	}
 	return args
 }
@@ -122,6 +218,7 @@ func (p *parser) Except(tokenType lexar.TokenType, errMsg string) *lexar.Token {
 	}
 	return p.Prev()
 }
+
 func (p *parser) ParseVariableDeclaration() any {
 	p.Next()
 	identifier := p.Except(lexar.Identifier, "O'zgaruvchi nomi nato'g'ri")
@@ -142,6 +239,16 @@ func (p *parser) ParseVariableDeclaration() any {
 		p.Next()
 	}
 	return declatation
+}
+
+func (p *parser) ParseBody() []any {
+	var body []any
+	p.Except(lexar.OpenBrace, "Except open brace")
+	for p.At().Type != lexar.CloseBrace {
+		body = append(body, p.ParseStatement())
+	}
+	p.Except(lexar.CloseBrace, "Except close brace")
+	return body
 }
 
 func (p *parser) ParsePrimaryExpression() any {
@@ -188,10 +295,6 @@ func (p *parser) ParseFnDeclaration() any {
 		}
 		params = append(params, param)
 	}
-	var body []any
-	for p.At().Type != lexar.CloseBrace {
-		body = append(body, p.ParseStatement())
-	}
 	return &FunctionDeclaration{
 		Statement: &Statement{
 			Kind: FunctionDeclarationNode,
@@ -199,7 +302,7 @@ func (p *parser) ParseFnDeclaration() any {
 		},
 		Name:   identifier.Value.(string),
 		Params: params,
-		Body:   body,
+		Body:   p.ParseBody(),
 	}
 }
 
@@ -209,6 +312,8 @@ func (p *parser) ParseStatement() any {
 		return p.ParseVariableDeclaration()
 	case lexar.Fn:
 		return p.ParseFnDeclaration()
+	case lexar.If:
+		return p.ParseIfStatement()
 	default:
 		return p.ParseAssignmentExpression()
 	}

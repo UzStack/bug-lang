@@ -90,7 +90,7 @@ func (t *tokenize) Tokenize(code string) []*Token {
 			t.FindString()
 			continue
 		}
-		if char == "!" && t.At() == "!" {
+		if char == "#" {
 			t.Handle()
 			t.FindEnd()
 			continue
@@ -108,10 +108,7 @@ func (t *tokenize) Tokenize(code string) []*Token {
 			t.Handle()
 			t.token(char, Comma)
 		}
-		if char == "=" {
-			t.Handle()
-			t.token(char, Equals)
-		}
+
 		if char == "(" {
 			t.Handle()
 			t.token(char, OpenParen)
@@ -143,6 +140,15 @@ func (t *tokenize) Tokenize(code string) []*Token {
 		if IsNumber(char) {
 			t.TempWord += char
 			continue
+		}
+		if utils.InArray(char, []any{"=", "<", ">", "!"}) {
+			if t.At() == "=" {
+				t.token(char+t.Next(), BinaryOperator)
+			} else if char == "=" {
+				t.token(char, Equals)
+			} else {
+				t.token(char, BinaryOperator)
+			}
 		}
 		t.Handle()
 	}

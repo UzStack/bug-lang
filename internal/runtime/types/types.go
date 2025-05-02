@@ -8,6 +8,7 @@ const (
 	String   RuntimeTypes = "String"
 	Number   RuntimeTypes = "Number"
 	Function RuntimeTypes = "Function"
+	Flow     RuntimeTypes = "Flow"
 )
 
 type FunctionDeclaration struct {
@@ -25,4 +26,14 @@ type NativeFunctionDeclaration struct {
 type RuntimeValue struct {
 	Type  RuntimeTypes
 	Value any
+}
+
+type NullValue struct {
+	Type  RuntimeTypes
+	Value any
+}
+
+type FlowValue struct {
+	Type    RuntimeTypes
+	Catched bool
 }

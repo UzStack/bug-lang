@@ -12,6 +12,9 @@ const (
 	IdentifierNode          NodeType = "Identifier"
 	NumberLiteralNode       NodeType = "NumberLiteral"
 	BinaryOperatorNode      NodeType = "BinaryOperator"
+	IfStatementNode         NodeType = "IfStatement"
+	ElseIfStatementNode     NodeType = "ElseIfStatement"
+	ElseStatementNode       NodeType = "ElseStatement"
 )
 
 type Statement struct {
@@ -79,4 +82,22 @@ type FunctionDeclaration struct {
 	Name   string
 	Params []*IdentifierStatement
 	Body   []any
+}
+
+type IfStatement struct {
+	*Statement
+	Condition any
+	Body      []any
+	Childs    []any
+}
+
+type ElseIfStatement struct {
+	*Statement
+	Condition any
+	Body      []any
+}
+
+type ElseStatement struct {
+	*Statement
+	Body []any
 }

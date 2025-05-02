@@ -1,11 +1,10 @@
 var first_name = "Samandar";
 var last_name = "Azamov";
 
-func name(){
-    var age = 10;
-    print(age, first_name);
-    print("salom");
-    print("qalaysan");
+if (20 == 10){
+    print("teng");
+}elseif (100 > 200){
+    print("elseif")
+}else {
+    print("else")
 }
-
-name()
