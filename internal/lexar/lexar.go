@@ -141,8 +141,9 @@ func (t *tokenize) Tokenize(code string) []*Token {
 			t.TempWord += char
 			continue
 		}
-		if utils.InArray(char, []any{"=", "<", ">", "!"}) {
-			if t.At() == "=" {
+		if utils.InArray(char, []any{"=", "<", ">", "!", "&", "|"}) {
+			t.Handle()
+			if utils.InArray(t.At(), []any{"&", "|", "="}) {
 				t.token(char+t.Next(), BinaryOperator)
 			} else if char == "=" {
 				t.token(char, Equals)

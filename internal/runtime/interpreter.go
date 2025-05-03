@@ -64,7 +64,10 @@ func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment
 func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any {
 	for Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
 		for _, statement := range node.Body {
-			Interpreter(statement, env)
+			result := Interpreter(statement, env)
+			if isReturn, response := IsReturn(result); isReturn {
+				return response
+			}
 		}
 	}
 	return nil
@@ -151,32 +154,43 @@ func EvalProgram(node *parser.Program, env *enviroment.Enviroment) any {
 }
 
 func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Enviroment) any {
-	left, _ := utils.Str2Int(Interpreter(node.Left, env).(*types.RuntimeValue).Value)
-	right, _ := utils.Str2Int(Interpreter(node.Right, env).(*types.RuntimeValue).Value)
 	var value any
-	switch node.Operator {
-	case "+":
-		value = left + right
-	case "-":
-		value = left - right
-	case "*":
-		value = left * right
-	case "/":
-		value = left / right
-	case "%":
-		value = left % right
-	case "==":
-		value = left == right
-	case ">=":
-		value = left >= right
-	case "<=":
-		value = left <= right
-	case "!=":
-		value = left != right
-	case ">":
-		value = left > right
-	case "<":
-		value = left < right
+	if utils.InArray(node.Operator, []any{"&&", "||"}) {
+		left := Interpreter(node.Left, env).(*types.RuntimeValue).Value.(bool)
+		right := Interpreter(node.Right, env).(*types.RuntimeValue).Value.(bool)
+		switch node.Operator {
+		case "&&":
+			value = left && right
+		case "||":
+			value = left || right
+		}
+	} else {
+		left, _ := utils.Str2Int(Interpreter(node.Left, env).(*types.RuntimeValue).Value)
+		right, _ := utils.Str2Int(Interpreter(node.Right, env).(*types.RuntimeValue).Value)
+		switch node.Operator {
+		case "+":
+			value = left + right
+		case "-":
+			value = left - right
+		case "*":
+			value = left * right
+		case "/":
+			value = left / right
+		case "%":
+			value = left % right
+		case "==":
+			value = left == right
+		case ">=":
+			value = left >= right
+		case "<=":
+			value = left <= right
+		case "!=":
+			value = left != right
+		case ">":
+			value = left > right
+		case "<":
+			value = left < right
+		}
 	}
 
 	return &types.RuntimeValue{
@@ -193,7 +207,7 @@ func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Envir
 func IsReturn(result any) (bool, any) {
 	switch val := result.(type) {
 	case *types.ReturnValue:
-		return true, val.Value
+		return true, val
 	}
 	return false, nil
 }
@@ -213,7 +227,7 @@ func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
 		for _, statement := range v.Body {
 			result = Interpreter(statement, env)
 			if isReturn, response := IsReturn(result); isReturn {
-				return response
+				return response.(*types.ReturnValue).Value
 			}
 		}
 		return result

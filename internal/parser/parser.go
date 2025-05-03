@@ -137,12 +137,11 @@ func (p *parser) ParseElseStatement() any {
 
 func (p *parser) ParseLogicalExpression() any {
 	left := p.ParseRelationalExpression()
-
 	for utils.InArray(p.At().Value, []any{"&&", "||"}) {
 		operator := p.Next().Value
 		right := p.ParseRelationalExpression()
 
-		return &BinaryExpression{
+		left = &BinaryExpression{
 			Statement: &Statement{
 				Kind: BinaryOperatorNode,
 				Line: p.At().Line,
@@ -152,7 +151,6 @@ func (p *parser) ParseLogicalExpression() any {
 			Operator: operator,
 		}
 	}
-
 	return left
 }
 
@@ -163,7 +161,7 @@ func (p *parser) ParseRelationalExpression() any {
 		operator := p.Next().Value
 		right := p.ParseAdditiveExpression()
 
-		return &BinaryExpression{
+		left = &BinaryExpression{
 			Statement: &Statement{
 				Kind: BinaryOperatorNode,
 				Line: p.At().Line,
