@@ -1,7 +1,14 @@
-var names = [1,2,3];
+var numbers = [1,2,3];
 var user = {
     "name": "Samandar",
-    "age": "10",
+    "age": 10,
+}
+class Test(){
+    func main(){
+        var hello = user["name"];
+        return user["age"] + numbers[1-1];
+    }
 }
 
-print(user["age"] + 1);
+print(main());
+print(hello);
