@@ -41,3 +41,7 @@ type FlowValue struct {
 type ReturnValue struct {
 	Value any
 }
+
+type ArrayValue struct {
+	Values []any
+}

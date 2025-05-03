@@ -1,5 +1,8 @@
+var numbers = [1,[1,2,3,4,5,[50,10]],2,3, 10 - 20];
 
+print(numbers[1][6-1][1]);
 
-if (10==10 && 2==2 && 2==2){
-    print("teng");
+func test(){
+    print("salom");
 }
+test();

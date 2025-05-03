@@ -44,16 +44,35 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return EvalAssignmentExpression(node, env)
 	case *parser.ReturnStatement:
 		return EvalReturnStatement(node, env)
+	case *parser.MemberExpression:
+		return EvalMemberExpression(node, env)
+	case *parser.ArrayExpression:
+		return EvalArrayExpression(node, env)
 	default:
 		// fmt.Printf("Tip: %T", astBody)
 	}
 	return nil
 }
 
+func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviroment) any {
+	var values []any
+	for _, item := range node.Values {
+		values = append(values, Interpreter(item, env))
+	}
+	return &types.ArrayValue{
+		Values: values,
+	}
+}
+
 func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviroment) any {
 	return &types.ReturnValue{
 		Value: Interpreter(node.Value, env),
 	}
+}
+func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Enviroment) any {
+	left := Interpreter(node.Left, env).(*types.ArrayValue)
+	index, _ := utils.Str2Int(Interpreter(node.Prop, env).(*types.RuntimeValue).Value)
+	return left.Values[index]
 }
 
 func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) any {
@@ -214,7 +233,7 @@ func IsReturn(result any) (bool, any) {
 
 func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
 	var args []any
-	switch v := env.GetVariable(node.Caller.Name, -1).(type) {
+	switch v := Interpreter(node.Caller, env).(type) {
 	case *types.NativeFunctionDeclaration:
 		for _, arg := range node.Args {
 			args = append(args, Interpreter(arg, env))

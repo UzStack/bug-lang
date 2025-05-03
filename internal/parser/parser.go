@@ -6,6 +6,7 @@ import (
 
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/pkg/utils"
+	"github.com/k0kubun/pp"
 )
 
 type parser struct {
@@ -34,8 +35,20 @@ func (p parser) IsEOF() bool {
 	return p.At().Type != lexar.EOF
 }
 
+// - Orders Of Prescidence -
+// Assignment
+// Object
+// Logical
+// Relational
+// AdditiveExpr
+// MultiplicitaveExpr
+// CallMember
+// Member
+// PrimaryExpr
+
 func (p *parser) ParseAssignmentExpression() any {
-	left := p.ParseLogicalExpression()
+	left := p.ParseArrayExpression()
+
 	if p.At().Type == lexar.Equals {
 		p.Next()
 		return &AssignmentExpression{
@@ -59,28 +72,6 @@ func (p *parser) ParseReturnStatement() any {
 		},
 		Value: p.ParseAssignmentExpression(),
 	}
-}
-
-func (p *parser) ParseCallExpression() any {
-	caller := p.ParsePrimaryExpression()
-
-	if p.At().Type == lexar.OpenParen {
-		return &CallStatement{
-			Statement: &Statement{
-				Line: p.At().Line,
-				Kind: CallStatementNode,
-			},
-			Caller: &Caller{
-				Statement: &Statement{
-					Line: p.At().Line,
-					Kind: CallerNode,
-				},
-				Name: caller.(*IdentifierStatement).Value.(string),
-			},
-			Args: p.ParseArgs(),
-		}
-	}
-	return caller
 }
 
 func (p *parser) ParseIfStatement() any {
@@ -135,8 +126,40 @@ func (p *parser) ParseElseStatement() any {
 	}
 }
 
+func (p *parser) ParseArrayExpression() any {
+	if p.At().Type != lexar.OpenBracket {
+		return p.ParseLogicalExpression()
+	}
+	return &ArrayExpression{
+		Statement: &Statement{
+			Line: p.At().Line,
+			Kind: ArrayNode,
+		},
+		Values: p.ParseArrayItems(),
+	}
+}
+
+func (p *parser) ParseArrayItems() []any {
+	var params []any
+	p.Except(lexar.OpenBracket, "Except open bracket Array")
+	if p.At().Type == lexar.CloseBracket {
+		return params
+	}
+	params = append(params, p.ParseAssignmentExpression())
+	for p.At().Type != lexar.CloseBracket {
+		if p.At().Type == lexar.Comma {
+			p.Next()
+			continue
+		}
+		params = append(params, p.ParseAssignmentExpression())
+	}
+	p.Except(lexar.CloseBracket, "Except close bracket Array")
+	return params
+}
+
 func (p *parser) ParseLogicalExpression() any {
 	left := p.ParseRelationalExpression()
+
 	for utils.InArray(p.At().Value, []any{"&&", "||"}) {
 		operator := p.Next().Value
 		right := p.ParseRelationalExpression()
@@ -195,11 +218,11 @@ func (p *parser) ParseAdditiveExpression() any {
 }
 
 func (p *parser) ParseMultiplicativeExpression() any {
-	left := p.ParseCallExpression()
+	left := p.ParseCallMemberExpression()
 
 	for p.At().Value == "*" || p.At().Value == "/" || p.At().Value == "%" {
 		operator := p.Next().Value
-		right := p.ParseCallExpression()
+		right := p.ParseCallMemberExpression()
 		left = &BinaryExpression{
 			Statement: &Statement{
 				Kind: BinaryOperatorNode,
@@ -253,7 +276,7 @@ func (p *parser) ParseVariableDeclaration() any {
 			Line: p.At().Line,
 		},
 		Name:  value,
-		Value: p.ParseAdditiveExpression(),
+		Value: p.ParseAssignmentExpression(),
 	}
 	if p.At().Type == lexar.Semicolon {
 		p.Next()
@@ -286,6 +309,56 @@ func (p *parser) ParseBody() []any {
 	return body
 }
 
+func (p *parser) ParseCallMemberExpression() any {
+	member := p.ParseMemberExpression()
+	if p.At().Type == lexar.OpenParen {
+		return p.ParseCallExpression(member)
+	}
+	return member
+}
+
+func (p *parser) ParseMemberExpression() any {
+	left := p.ParsePrimaryExpression()
+
+	for p.At().Type == lexar.OpenBracket {
+		p.Next()
+		left = &MemberExpression{
+			Statement: &Statement{
+				Line: p.At().Line,
+				Kind: MemberNode,
+			},
+			Left:     left,
+			Prop:     p.ParseAssignmentExpression(),
+			Computed: true,
+		}
+		p.Except(lexar.CloseBracket, "Except close bracket Member")
+	}
+	for p.At().Type == lexar.Dot {
+		p.Next()
+		left = &MemberExpression{
+			Statement: &Statement{
+				Line: p.At().Line,
+				Kind: MemberNode,
+			},
+			Left:     left,
+			Prop:     p.ParsePrimaryExpression(),
+			Computed: false,
+		}
+	}
+	return left
+}
+
+func (p *parser) ParseCallExpression(caller any) any {
+	return &CallStatement{
+		Statement: &Statement{
+			Line: p.At().Line,
+			Kind: CallStatementNode,
+		},
+		Caller: caller,
+		Args:   p.ParseArgs(),
+	}
+}
+
 func (p *parser) ParsePrimaryExpression() any {
 	switch p.At().Type {
 	case lexar.Number:
@@ -297,6 +370,7 @@ func (p *parser) ParsePrimaryExpression() any {
 			Value: p.Next().Value,
 		}
 	case lexar.String:
+
 		return &StringLiteral{
 			Statement: &Statement{
 				Kind: NumberLiteralNode,
@@ -312,8 +386,10 @@ func (p *parser) ParsePrimaryExpression() any {
 			},
 			Value: p.Next().Value,
 		}
-	default:
+	case lexar.Semicolon:
 		p.Next()
+	default:
+		pp.Print(p.At())
 	}
 	return 0
 }
