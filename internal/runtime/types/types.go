@@ -44,14 +44,6 @@ type ReturnValue struct {
 	Value any
 }
 
-type ArrayValue struct {
-	Values []any
-}
-
-func (a *ArrayValue) Add(value any) {
-	a.Values = append(a.Values, value)
-}
-
-func (a *ArrayValue) Pop() {
-	a.Values = a.Values[:len(a.Values)-1]
+type Object interface {
+	GetValue() any
 }
