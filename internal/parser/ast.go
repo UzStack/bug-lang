@@ -18,6 +18,7 @@ const (
 	ForNode                  NodeType = "For"
 	AssignmentExpressionNode NodeType = "AssignmentExpression"
 	ReturnNode               NodeType = "Return"
+	ArrayNode                NodeType = "Array"
 )
 
 type Statement struct {
@@ -120,4 +121,10 @@ type AssignmentExpression struct {
 type ReturnStatement struct {
 	*Statement
 	Value any
+}
+
+type ArrayExpression struct {
+	*Statement
+	Values []any
+	Left   any
 }

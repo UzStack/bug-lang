@@ -6,6 +6,7 @@ import (
 
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/pkg/utils"
+	"github.com/k0kubun/pp"
 )
 
 type parser struct {
@@ -35,7 +36,8 @@ func (p parser) IsEOF() bool {
 }
 
 func (p *parser) ParseAssignmentExpression() any {
-	left := p.ParseLogicalExpression()
+	left := p.ParseArrayExpression()
+
 	if p.At().Type == lexar.Equals {
 		p.Next()
 		return &AssignmentExpression{
@@ -135,8 +137,39 @@ func (p *parser) ParseElseStatement() any {
 	}
 }
 
+func (p *parser) ParseArrayExpression() any {
+	left := p.ParseLogicalExpression()
+	if p.At().Type == lexar.OpenBracket {
+		left = &ArrayExpression{
+			Statement: &Statement{
+				Line: p.At().Line,
+				Kind: ArrayNode,
+			},
+			Left:   left,
+			Values: p.ParseArrayItems(),
+		}
+	}
+	return left
+}
+
+func (p *parser) ParseArrayItems() []any {
+	var params []any
+	p.Except(lexar.OpenBracket, "Except open bracket Array")
+	if p.At().Type == lexar.CloseBracket {
+		return params
+	}
+	params = append(params, p.ParseAssignmentExpression())
+	for p.At().Type == lexar.Comma {
+		p.Next()
+		params = append(params, p.ParseAssignmentExpression())
+	}
+	p.Except(lexar.CloseBracket, "Except close bracket Array")
+	return params
+}
+
 func (p *parser) ParseLogicalExpression() any {
 	left := p.ParseRelationalExpression()
+
 	for utils.InArray(p.At().Value, []any{"&&", "||"}) {
 		operator := p.Next().Value
 		right := p.ParseRelationalExpression()
@@ -253,7 +286,7 @@ func (p *parser) ParseVariableDeclaration() any {
 			Line: p.At().Line,
 		},
 		Name:  value,
-		Value: p.ParseAdditiveExpression(),
+		Value: p.ParseAssignmentExpression(),
 	}
 	if p.At().Type == lexar.Semicolon {
 		p.Next()
@@ -312,8 +345,10 @@ func (p *parser) ParsePrimaryExpression() any {
 			},
 			Value: p.Next().Value,
 		}
-	default:
+	case lexar.Semicolon:
 		p.Next()
+	default:
+		pp.Print(p.At().Type)
 	}
 	return 0
 }

@@ -1,5 +1,2 @@
-
-
-if (10==10 && 2==2 && 2==2){
-    print("teng");
-}
+var names = ["samandar", "jinwoo", [1,2]];
+name[1];

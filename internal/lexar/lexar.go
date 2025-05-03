@@ -127,7 +127,7 @@ func (t *tokenize) Tokenize(code string) []*Token {
 		}
 		if char == "[" {
 			t.Handle()
-			t.token(char, CloseBracket)
+			t.token(char, OpenBracket)
 		}
 		if char == "]" {
 			t.Handle()
