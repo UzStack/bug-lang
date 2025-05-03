@@ -1,4 +1,13 @@
-var age = 10 * 10 - 20;
-print(age);
-print(10 + 20);
-print("Dattebayo")
+
+
+func main(){
+    var i = 0;
+    for (i < 10){
+        i = i + 1;
+        return "salom"
+        print(i, "Salom boshliq");
+    }
+}
+
+
+main()

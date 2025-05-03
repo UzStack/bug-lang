@@ -47,8 +47,8 @@ type Token struct {
 var Keywords = map[string]TokenType{
 	"var":      Var,
 	"const":    Const,
-	"endi":     Equals,
-	"def":      Fn,
+	"=":        Equals,
+	"func":     Fn,
 	"return":   Return,
 	"if":       If,
 	"elseif":   ElseIf,
