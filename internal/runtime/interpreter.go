@@ -51,12 +51,30 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return EvalMemberExpression(node, env)
 	case *parser.ArrayExpression:
 		return EvalArrayExpression(node, env)
+	case *parser.ClassDeclaration:
+		return EvalClassDeclaration(node, env)
+	case *parser.ObjectExpression:
+		return EvalObjectDeclaration(node, env)
 	default:
 		// fmt.Printf("Tip: %T", astBody)
 	}
 	return nil
 }
 
+func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
+	for _, statement := range node.Body {
+		Interpreter(statement, env)
+	}
+	return nil
+}
+
+func EvalObjectDeclaration(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
+	values := make(map[string]any)
+	for key, item := range node.Values {
+		values[key] = Interpreter(item, env)
+	}
+	return types.NewObject(values)
+}
 func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviroment) any {
 	var values []any
 	for _, item := range node.Values {
@@ -74,9 +92,17 @@ func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviromen
 }
 func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Enviroment) any {
 	if node.Computed {
-		left := Interpreter(node.Left, env).(*types.ArrayValue)
-		index, _ := utils.Str2Int(Interpreter(node.Prop, env).(*types.RuntimeValue).Value)
-		return left.Values[index]
+		switch t := Interpreter(node.Left, env).(type) {
+		case *types.ArrayValue:
+			index, _ := utils.Str2Int(Interpreter(node.Prop, env).(*types.RuntimeValue).Value)
+			return t.Values[index]
+		case *types.ObjectValue:
+			return t.Values[Interpreter(node.Prop, env).(*types.RuntimeValue).Value.(string)]
+		default:
+			pp.Print(t)
+			return nil
+		}
+
 	} else {
 		left := Interpreter(node.Left, env)
 		v := reflect.ValueOf(left)

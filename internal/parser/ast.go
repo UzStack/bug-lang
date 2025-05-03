@@ -20,6 +20,7 @@ const (
 	ReturnNode               NodeType = "Return"
 	ArrayNode                NodeType = "Array"
 	MemberNode               NodeType = "Member"
+	ObjectNode               NodeType = "Object"
 )
 
 type Statement struct {
@@ -130,9 +131,20 @@ type ArrayExpression struct {
 	Left   any
 }
 
+type ObjectExpression struct {
+	*Statement
+	Values map[string]any
+}
+
 type MemberExpression struct {
 	*Statement
 	Left     any
 	Prop     any
 	Computed bool
+}
+
+type ClassDeclaration struct {
+	*Statement
+	Name any
+	Body []any
 }

@@ -1,13 +1,7 @@
 var names = [1,2,3];
-
-class Name(){
-    func name(){
-        $this.name = "samandar";
-    }
+var user = {
+    "name": "Samandar",
+    "age": "10",
 }
 
-names.add(2);
-names.add(12);
-names.pop();
-
-print(names);
+print(user["age"] + 1);

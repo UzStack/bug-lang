@@ -26,6 +26,7 @@ const (
 	// Keywords
 	Var
 	Const
+	Class
 	Fn
 	Return
 	If
@@ -58,4 +59,5 @@ var Keywords = map[string]TokenType{
 	"for":      For,
 	"continue": Continue,
 	"break":    Break,
+	"class":    Class,
 }
