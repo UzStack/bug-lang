@@ -1,6 +1,8 @@
 package types
 
-import "github.com/UzStack/bug-lang/internal/parser"
+import (
+	"github.com/UzStack/bug-lang/internal/parser"
+)
 
 type RuntimeTypes string
 
@@ -44,4 +46,12 @@ type ReturnValue struct {
 
 type ArrayValue struct {
 	Values []any
+}
+
+func (a *ArrayValue) Add(value any) {
+	a.Values = append(a.Values, value)
+}
+
+func (a *ArrayValue) Pop() {
+	a.Values = a.Values[:len(a.Values)-1]
 }

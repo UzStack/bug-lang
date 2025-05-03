@@ -1,8 +1,13 @@
-var numbers = [1,[1,2,3,4,5,[50,10]],2,3, 10 - 20];
+var names = [1,2,3];
 
-print(numbers[1][6-1][1]);
-
-func test(){
-    print("salom");
+class Name(){
+    func name(){
+        $this.name = "samandar";
+    }
 }
-test();
+
+names.add(2);
+names.add(12);
+names.pop();
+
+print(names);

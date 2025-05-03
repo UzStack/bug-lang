@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"runtime/pprof"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/internal/parser"
@@ -10,6 +11,17 @@ import (
 )
 
 func main() {
+	f, err := os.Create("cpu.prof")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	pprof.StartCPUProfile(f)
+	defer func() {
+		pprof.StopCPUProfile()
+	}()
+
 	args := os.Args
 	if len(args) <= 1 {
 		panic("Fayil kiritilmadi")
