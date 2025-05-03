@@ -70,8 +70,9 @@ func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviromen
 	}
 }
 func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Enviroment) any {
-	left := Interpreter(node.Left, env)
-	return left
+	left := Interpreter(node.Left, env).(*types.ArrayValue)
+	index, _ := utils.Str2Int(Interpreter(node.Prop, env).(*types.RuntimeValue).Value)
+	return left.Values[index]
 }
 
 func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) any {
