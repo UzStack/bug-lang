@@ -1,6 +1,9 @@
 package runtime
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/UzStack/bug-lang/internal/parser"
 	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
@@ -48,12 +51,30 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return EvalMemberExpression(node, env)
 	case *parser.ArrayExpression:
 		return EvalArrayExpression(node, env)
+	case *parser.ClassDeclaration:
+		return EvalClassDeclaration(node, env)
+	case *parser.ObjectExpression:
+		return EvalObjectDeclaration(node, env)
 	default:
 		// fmt.Printf("Tip: %T", astBody)
 	}
 	return nil
 }
 
+func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
+	for _, statement := range node.Body {
+		Interpreter(statement, env)
+	}
+	return nil
+}
+
+func EvalObjectDeclaration(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
+	values := make(map[string]any)
+	for key, item := range node.Values {
+		values[key] = Interpreter(item, env)
+	}
+	return types.NewObject(values)
+}
 func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviroment) any {
 	var values []any
 	for _, item := range node.Values {
@@ -70,9 +91,24 @@ func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviromen
 	}
 }
 func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Enviroment) any {
-	left := Interpreter(node.Left, env).(*types.ArrayValue)
-	index, _ := utils.Str2Int(Interpreter(node.Prop, env).(*types.RuntimeValue).Value)
-	return left.Values[index]
+	if node.Computed {
+		switch t := Interpreter(node.Left, env).(type) {
+		case *types.ArrayValue:
+			index, _ := utils.Str2Int(Interpreter(node.Prop, env).(*types.RuntimeValue).Value)
+			return t.Values[index]
+		case *types.ObjectValue:
+			return t.Values[Interpreter(node.Prop, env).(*types.RuntimeValue).Value.(string)]
+		default:
+			pp.Print(t)
+			return nil
+		}
+
+	} else {
+		left := Interpreter(node.Left, env)
+		v := reflect.ValueOf(left)
+		name := node.Prop.(*parser.IdentifierStatement).Value.(string)
+		return v.MethodByName(string(strings.ToUpper(name[:1]) + name[1:]))
+	}
 }
 
 func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) any {
@@ -233,11 +269,11 @@ func IsReturn(result any) (bool, any) {
 
 func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
 	var args []any
+	for _, arg := range node.Args {
+		args = append(args, Interpreter(arg, env))
+	}
 	switch v := Interpreter(node.Caller, env).(type) {
 	case *types.NativeFunctionDeclaration:
-		for _, arg := range node.Args {
-			args = append(args, Interpreter(arg, env))
-		}
 		call := v.Call.(func(...any))
 		call(args...)
 		return nil
@@ -250,6 +286,12 @@ func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
 			}
 		}
 		return result
+	case reflect.Value:
+		callArgs := make([]reflect.Value, len(args))
+		for i, arg := range args {
+			callArgs[i] = reflect.ValueOf(arg)
+		}
+		return v.Call(callArgs)
 	default:
 		pp.Print(v)
 	}

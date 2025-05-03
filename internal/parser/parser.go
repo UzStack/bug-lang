@@ -126,9 +126,41 @@ func (p *parser) ParseElseStatement() any {
 	}
 }
 
+func (p *parser) ParseObjectExpression() any {
+	if p.At().Type != lexar.OpenBrace {
+		return p.ParseLogicalExpression()
+	}
+	return &ObjectExpression{
+		Statement: &Statement{
+			Line: p.At().Line,
+			Kind: ObjectNode,
+		},
+		Values: p.ParseObjectItems(),
+	}
+}
+
+func (p *parser) ParseObjectItems() map[string]any {
+	items := make(map[string]any)
+	p.Except(lexar.OpenBrace, "Except open brace Object")
+	if p.At().Type == lexar.CloseBrace {
+		return items
+	}
+	for p.At().Type != lexar.CloseBrace {
+		key := p.Next().Value.(string)
+		if p.At().Type != lexar.Colon {
+			panic("Syntax error object: " + p.At().Value.(string))
+		}
+		p.Except(lexar.Colon, "Except colon Object")
+		items[key] = p.ParseAssignmentExpression()
+		p.Except(lexar.Comma, "Except comma Object")
+	}
+	p.Except(lexar.CloseBrace, "Except close brace Object")
+	return items
+}
+
 func (p *parser) ParseArrayExpression() any {
 	if p.At().Type != lexar.OpenBracket {
-		return p.ParseLogicalExpression()
+		return p.ParseObjectExpression()
 	}
 	return &ArrayExpression{
 		Statement: &Statement{
@@ -393,6 +425,21 @@ func (p *parser) ParsePrimaryExpression() any {
 	}
 	return 0
 }
+func (p *parser) ParseClassStatement() any {
+	p.Next()
+	identifier := p.Except(lexar.Identifier, "Except Identifier Class")
+	p.Except(lexar.OpenParen, "Except open paren class")
+	p.Except(lexar.CloseParen, "Except close paren class")
+	body := p.ParseBody()
+
+	return &ClassDeclaration{
+		Statement: &Statement{
+			Line: p.At().Line,
+		},
+		Body: body,
+		Name: identifier,
+	}
+}
 
 func (p *parser) ParseFnDeclaration() any {
 	p.Next()
@@ -429,10 +476,13 @@ func (p *parser) ParseStatement() any {
 		return p.ParseForStatement()
 	case lexar.Return:
 		return p.ParseReturnStatement()
+	case lexar.Class:
+		return p.ParseClassStatement()
 	default:
 		return p.ParseAssignmentExpression()
 	}
 }
+
 func (p *parser) CreateAST() any {
 	program := &Program{
 		Statement: &Statement{

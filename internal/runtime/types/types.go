@@ -1,6 +1,8 @@
 package types
 
-import "github.com/UzStack/bug-lang/internal/parser"
+import (
+	"github.com/UzStack/bug-lang/internal/parser"
+)
 
 type RuntimeTypes string
 
@@ -42,6 +44,6 @@ type ReturnValue struct {
 	Value any
 }
 
-type ArrayValue struct {
-	Values []any
+type Object interface {
+	GetValue() any
 }
