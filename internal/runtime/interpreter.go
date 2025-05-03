@@ -5,7 +5,6 @@ import (
 	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	"github.com/UzStack/bug-lang/pkg/utils"
-	"github.com/k0kubun/pp"
 )
 
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
@@ -213,27 +212,27 @@ func IsReturn(result any) (bool, any) {
 }
 
 func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
-	var args []any
-	switch v := env.GetVariable(node.Caller.Name, -1).(type) {
-	case *types.NativeFunctionDeclaration:
-		for _, arg := range node.Args {
-			args = append(args, Interpreter(arg, env))
-		}
-		call := v.Call.(func(...any))
-		call(args...)
-		return nil
-	case *types.FunctionDeclaration:
-		var result any
-		for _, statement := range v.Body {
-			result = Interpreter(statement, env)
-			if isReturn, response := IsReturn(result); isReturn {
-				return response.(*types.ReturnValue).Value
-			}
-		}
-		return result
-	default:
-		pp.Print(v)
-	}
+	// var args []any
+	// switch v := env.GetVariable(node.Caller.Name, -1).(type) {
+	// case *types.NativeFunctionDeclaration:
+	// 	for _, arg := range node.Args {
+	// 		args = append(args, Interpreter(arg, env))
+	// 	}
+	// 	call := v.Call.(func(...any))
+	// 	call(args...)
+	// 	return nil
+	// case *types.FunctionDeclaration:
+	// 	var result any
+	// 	for _, statement := range v.Body {
+	// 		result = Interpreter(statement, env)
+	// 		if isReturn, response := IsReturn(result); isReturn {
+	// 			return response.(*types.ReturnValue).Value
+	// 		}
+	// 	}
+	// 	return result
+	// default:
+	// 	pp.Print(v)
+	// }
 	return nil
 
 }

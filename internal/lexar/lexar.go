@@ -108,6 +108,10 @@ func (t *tokenize) Tokenize(code string) []*Token {
 			t.Handle()
 			t.token(char, Comma)
 		}
+		if char == "." {
+			t.Handle()
+			t.token(char, Dot)
+		}
 
 		if char == "(" {
 			t.Handle()

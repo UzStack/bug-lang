@@ -1,2 +1,3 @@
-var names = ["samandar", "jinwoo", [1,2]];
-name[1];
+user.name();
+name();
+names[1];

@@ -19,6 +19,7 @@ const (
 	AssignmentExpressionNode NodeType = "AssignmentExpression"
 	ReturnNode               NodeType = "Return"
 	ArrayNode                NodeType = "Array"
+	MemberNode               NodeType = "Member"
 )
 
 type Statement struct {
@@ -54,7 +55,7 @@ type BaseStatement struct {
 // Call Statement
 type CallStatement struct {
 	*Statement
-	Caller *Caller
+	Caller any
 	Value  any
 	Args   []any
 }
@@ -127,4 +128,11 @@ type ArrayExpression struct {
 	*Statement
 	Values []any
 	Left   any
+}
+
+type MemberExpression struct {
+	*Statement
+	Left     any
+	Prop     any
+	Computed bool
 }
