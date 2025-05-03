@@ -5,6 +5,7 @@ import (
 	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	"github.com/UzStack/bug-lang/pkg/utils"
+	"github.com/k0kubun/pp"
 )
 
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
@@ -43,16 +44,34 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return EvalAssignmentExpression(node, env)
 	case *parser.ReturnStatement:
 		return EvalReturnStatement(node, env)
+	case *parser.MemberExpression:
+		return EvalMemberExpression(node, env)
+	case *parser.ArrayExpression:
+		return EvalArrayExpression(node, env)
 	default:
 		// fmt.Printf("Tip: %T", astBody)
 	}
 	return nil
 }
 
+func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviroment) any {
+	var values []any
+	for _, item := range node.Values {
+		values = append(values, Interpreter(item, env))
+	}
+	return &types.ArrayValue{
+		Values: values,
+	}
+}
+
 func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviroment) any {
 	return &types.ReturnValue{
 		Value: Interpreter(node.Value, env),
 	}
+}
+func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Enviroment) any {
+	left := Interpreter(node.Left, env)
+	return left
 }
 
 func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) any {
@@ -212,27 +231,27 @@ func IsReturn(result any) (bool, any) {
 }
 
 func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
-	// var args []any
-	// switch v := env.GetVariable(node.Caller.Name, -1).(type) {
-	// case *types.NativeFunctionDeclaration:
-	// 	for _, arg := range node.Args {
-	// 		args = append(args, Interpreter(arg, env))
-	// 	}
-	// 	call := v.Call.(func(...any))
-	// 	call(args...)
-	// 	return nil
-	// case *types.FunctionDeclaration:
-	// 	var result any
-	// 	for _, statement := range v.Body {
-	// 		result = Interpreter(statement, env)
-	// 		if isReturn, response := IsReturn(result); isReturn {
-	// 			return response.(*types.ReturnValue).Value
-	// 		}
-	// 	}
-	// 	return result
-	// default:
-	// 	pp.Print(v)
-	// }
+	var args []any
+	switch v := Interpreter(node.Caller, env).(type) {
+	case *types.NativeFunctionDeclaration:
+		for _, arg := range node.Args {
+			args = append(args, Interpreter(arg, env))
+		}
+		call := v.Call.(func(...any))
+		call(args...)
+		return nil
+	case *types.FunctionDeclaration:
+		var result any
+		for _, statement := range v.Body {
+			result = Interpreter(statement, env)
+			if isReturn, response := IsReturn(result); isReturn {
+				return response.(*types.ReturnValue).Value
+			}
+		}
+		return result
+	default:
+		pp.Print(v)
+	}
 	return nil
 
 }

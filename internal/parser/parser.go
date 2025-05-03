@@ -35,6 +35,17 @@ func (p parser) IsEOF() bool {
 	return p.At().Type != lexar.EOF
 }
 
+// - Orders Of Prescidence -
+// Assignment
+// Object
+// Logical
+// Relational
+// AdditiveExpr
+// MultiplicitaveExpr
+// CallMember
+// Member
+// PrimaryExpr
+
 func (p *parser) ParseAssignmentExpression() any {
 	left := p.ParseArrayExpression()
 
@@ -116,18 +127,16 @@ func (p *parser) ParseElseStatement() any {
 }
 
 func (p *parser) ParseArrayExpression() any {
-	left := p.ParseLogicalExpression()
-	if p.At().Type == lexar.OpenBracket {
-		left = &ArrayExpression{
-			Statement: &Statement{
-				Line: p.At().Line,
-				Kind: ArrayNode,
-			},
-			Left:   left,
-			Values: p.ParseArrayItems(),
-		}
+	if p.At().Type != lexar.OpenBracket {
+		return p.ParseLogicalExpression()
 	}
-	return left
+	return &ArrayExpression{
+		Statement: &Statement{
+			Line: p.At().Line,
+			Kind: ArrayNode,
+		},
+		Values: p.ParseArrayItems(),
+	}
 }
 
 func (p *parser) ParseArrayItems() []any {
@@ -137,8 +146,11 @@ func (p *parser) ParseArrayItems() []any {
 		return params
 	}
 	params = append(params, p.ParseAssignmentExpression())
-	for p.At().Type == lexar.Comma {
-		p.Next()
+	for p.At().Type != lexar.CloseBracket {
+		if p.At().Type == lexar.Comma {
+			p.Next()
+			continue
+		}
 		params = append(params, p.ParseAssignmentExpression())
 	}
 	p.Except(lexar.CloseBracket, "Except close bracket Array")
@@ -307,6 +319,7 @@ func (p *parser) ParseCallMemberExpression() any {
 
 func (p *parser) ParseMemberExpression() any {
 	left := p.ParsePrimaryExpression()
+
 	for p.At().Type == lexar.OpenBracket {
 		p.Next()
 		left = &MemberExpression{
@@ -329,7 +342,7 @@ func (p *parser) ParseMemberExpression() any {
 			},
 			Left:     left,
 			Prop:     p.ParsePrimaryExpression(),
-			Computed: true,
+			Computed: false,
 		}
 	}
 	return left
