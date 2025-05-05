@@ -1,2 +1,14 @@
-var name = input("enter name: ");
-print(name);
+
+
+class User(){
+    func name(){
+        return "Samandar";
+    }
+    func hello(){
+        print("Salom", this.name());
+    }
+}
+
+var user = new User();
+
+user.hello();

@@ -14,10 +14,11 @@ const (
 )
 
 type FunctionDeclaration struct {
-	Name   any
-	Params []*parser.IdentifierStatement
-	Body   []any
-	Type   RuntimeTypes
+	Name        any
+	Params      []*parser.IdentifierStatement
+	Body        []any
+	Type        RuntimeTypes
+	OwnerObject any
 }
 
 type NativeFunctionDeclaration struct {
