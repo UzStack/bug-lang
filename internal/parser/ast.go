@@ -20,7 +20,8 @@ const (
 	ReturnNode               NodeType = "Return"
 	ArrayNode                NodeType = "Array"
 	MemberNode               NodeType = "Member"
-	ObjectNode               NodeType = "Object"
+	MapNode                  NodeType = "Map"
+	ObjectNode               NodeType = "ObjectNode"
 )
 
 type Statement struct {
@@ -131,7 +132,7 @@ type ArrayExpression struct {
 	Left   any
 }
 
-type ObjectExpression struct {
+type MapExpression struct {
 	*Statement
 	Values map[string]any
 }
@@ -145,6 +146,13 @@ type MemberExpression struct {
 
 type ClassDeclaration struct {
 	*Statement
+	Name    any
+	Body    []any
+	Methods []*FunctionDeclaration
+}
+
+type ObjectExpression struct {
+	*Statement
+	Args []any
 	Name any
-	Body []any
 }

@@ -2,9 +2,6 @@ package enviroment
 
 import (
 	"fmt"
-
-	"github.com/UzStack/bug-lang/internal/runtime/std"
-	"github.com/UzStack/bug-lang/internal/runtime/types"
 )
 
 type Enviroment struct {
@@ -21,22 +18,6 @@ func NewEnv(owner *Enviroment) *Enviroment {
 
 func NewGlobalEnv() *Enviroment {
 	env := NewEnv(nil)
-	env.DeclareVariable("print", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: std.Print,
-	}, -1)
-	env.DeclareVariable("true", &types.RuntimeValue{
-		Type:  "variable",
-		Value: true,
-	}, -1)
-	env.DeclareVariable("false", &types.RuntimeValue{
-		Type:  "variable",
-		Value: false,
-	}, -1)
-	env.DeclareVariable("null", &types.RuntimeValue{
-		Type:  "variable",
-		Value: nil,
-	}, -1)
 	return env
 }
 
@@ -57,7 +38,12 @@ func (e *Enviroment) AssignmenVariable(name string, value any, line int) any {
 func (e *Enviroment) GetVariable(name string, line int) any {
 	res, ok := e.Variables[name]
 	if !ok {
-		panic(fmt.Sprintf("O'zgaruvchi topilmadi %s Line: %d", name, line))
+		if e.Owner != nil {
+			return e.Owner.GetVariable(name, line)
+		}
+		if !ok {
+			panic(fmt.Sprintf("O'zgaruvchi topilmadi %s Line: %d", name, line))
+		}
 	}
 	return res
 }

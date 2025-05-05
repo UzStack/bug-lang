@@ -35,5 +35,5 @@ func main() {
 	parser := parser.NewParser(tokens)
 	ast := parser.CreateAST()
 	env := enviroment.NewGlobalEnv()
-	runtime.Interpreter(ast, env)
+	runtime.Init(ast, env)
 }
