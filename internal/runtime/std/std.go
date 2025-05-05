@@ -1,7 +1,11 @@
 package std
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"reflect"
+	"strings"
 
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 )
@@ -20,7 +24,24 @@ func Print(values ...any) {
 				}
 			}
 			fmt.Print("]\n")
+		default:
+			refValue := reflect.ValueOf(val)
+			if refValue.Kind() == reflect.Slice {
+				for i := 0; i < refValue.Len(); i++ {
+					Print(refValue.Index(i).Interface())
+				}
+			}
 		}
 	}
 	fmt.Print("\t\n")
+}
+
+func Input(values ...any) any {
+	fmt.Print(values[0].(*types.RuntimeValue).Value)
+	reader := bufio.NewReader(os.Stdin)
+	data, _ := reader.ReadString('\n')
+	data = strings.TrimSpace(data)
+	return &types.RuntimeValue{
+		Value: data,
+	}
 }

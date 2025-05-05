@@ -1,10 +1,2 @@
-class User(){
-    func name(){
-        var name = "Samandar";
-        print(name);
-    }
-}
-
-var user = new User(1,2,3);
-
-print(user.name())
+var name = input("enter name: ");
+print(name);

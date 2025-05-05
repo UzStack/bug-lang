@@ -17,6 +17,10 @@ func Init(ast any, env *enviroment.Enviroment) any {
 		Type: "native-function",
 		Call: std.Print,
 	}, -1)
+	env.DeclareVariable("input", &types.NativeFunctionDeclaration{
+		Type: "native-function",
+		Call: std.Input,
+	}, -1)
 	env.DeclareVariable("true", &types.RuntimeValue{
 		Type:  "variable",
 		Value: true,
@@ -308,9 +312,17 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 	}
 	switch v := Interpreter(node.Caller, scope).(type) {
 	case *types.NativeFunctionDeclaration:
-		call := v.Call.(func(...any))
-		call(args...)
-		return nil
+		fun := reflect.ValueOf(v.Call)
+		callArgs := make([]reflect.Value, len(args))
+		for i, arg := range args {
+			callArgs[i] = reflect.ValueOf(arg)
+		}
+		out := fun.Call(callArgs)
+		var results = make([]any, len(out))
+		for i, res := range out {
+			results[i] = res.Interface()
+		}
+		return results
 	case *types.FunctionDeclaration:
 		var result any
 		for _, statement := range v.Body {
