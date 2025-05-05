@@ -1,11 +1,16 @@
 
 
 class User(){
-    func name(){
-        return "Samandar";
+    func name(name){
+        return name;
+    }
+
+    func add(age){
+        return age + 20;
     }
     func hello(){
-        print("Salom", this.name());
+        var name = "Samandar";
+        print("Salom", this.name(name), this.add(19));
     }
 }
 
