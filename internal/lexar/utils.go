@@ -3,7 +3,7 @@ package lexar
 import "regexp"
 
 func IsAlpha(value string) bool {
-	re := regexp.MustCompile(`^[a-zA-Z_]+$`)
+	re := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 	return re.MatchString(value)
 }
 
