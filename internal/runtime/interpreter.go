@@ -328,6 +328,9 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 	case *types.FunctionDeclaration:
 		var result any
 		scope.DeclareVariable("this", v.OwnerObject, -1)
+		for index, name := range v.Params {
+			scope.DeclareVariable(name.Value.(string), Interpreter(node.Args[index], env), -1)
+		}
 		for _, statement := range v.Body {
 			result = Interpreter(statement, scope)
 			if isReturn, response := IsReturn(result); isReturn {
