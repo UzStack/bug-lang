@@ -9,7 +9,6 @@ import (
 	"github.com/UzStack/bug-lang/internal/runtime/std"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	"github.com/UzStack/bug-lang/pkg/utils"
-	"github.com/k0kubun/pp"
 )
 
 func Init(ast any, env *enviroment.Enviroment) any {
@@ -95,6 +94,12 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 	for _, method := range env.GetVariable(className, -1).(*parser.ClassDeclaration).Methods {
 		EvalFunctionDeclaration(method, scope, obj)
 	}
+	EvalCallStatement(&parser.CallStatement{
+		Caller: &parser.IdentifierStatement{
+			Value: "init",
+		},
+		Args: node.Args,
+	}, scope)
 	return obj
 }
 
@@ -354,8 +359,8 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 			callArgs[i] = reflect.ValueOf(arg)
 		}
 		return v.Call(callArgs)
-	default:
-		pp.Print(v)
+		// default:
+
 	}
 	return nil
 

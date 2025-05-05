@@ -48,7 +48,6 @@ func (p parser) IsEOF() bool {
 
 func (p *parser) ParseAssignmentExpression() any {
 	left := p.ParseNewObjectExpression()
-
 	if p.At().Type == lexar.Equals {
 		p.Next()
 		return &AssignmentExpression{
@@ -57,7 +56,7 @@ func (p *parser) ParseAssignmentExpression() any {
 				Kind: AssignmentExpressionNode,
 			},
 			Owner: left,
-			Value: p.ParseAdditiveExpression(),
+			Value: p.ParseAssignmentExpression(),
 		}
 	}
 	return left
@@ -67,8 +66,7 @@ func (p *parser) ParseNewObjectExpression() any {
 	if p.At().Type != lexar.New {
 		return p.ParseArrayExpression()
 	}
-
-	p.Except(lexar.New, "Except new object")
+	p.Next()
 	identifier := p.Except(lexar.Identifier, "Except Identifier new object")
 	args := p.ParseArgs()
 	return &ObjectExpression{
@@ -363,11 +361,6 @@ func (p *parser) ParseCallMemberExpression() any {
 	return member
 }
 
-func (p *parser) ParseObjectStatement() any {
-	p.Next()
-	return nil
-}
-
 func (p *parser) ParseMemberExpression() any {
 	left := p.ParsePrimaryExpression()
 
@@ -440,7 +433,7 @@ func (p *parser) ParsePrimaryExpression() any {
 	case lexar.Semicolon:
 		p.Next()
 	default:
-		pp.Print(p.At())
+		pp.Print("default", p.At())
 	}
 	return 0
 }
