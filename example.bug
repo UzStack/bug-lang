@@ -1,10 +1,14 @@
+
+
 class User(){
     func name(){
-        var name = "Samandar";
-        print(name);
+        return "Samandar";
+    }
+    func hello(){
+        print("Salom", this.name());
     }
 }
 
-var user = new User(1,2,3);
+var user = new User();
 
-print(user.name())
+user.hello();

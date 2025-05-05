@@ -17,6 +17,10 @@ func Init(ast any, env *enviroment.Enviroment) any {
 		Type: "native-function",
 		Call: std.Print,
 	}, -1)
+	env.DeclareVariable("input", &types.NativeFunctionDeclaration{
+		Type: "native-function",
+		Call: std.Input,
+	}, -1)
 	env.DeclareVariable("true", &types.RuntimeValue{
 		Type:  "variable",
 		Value: true,
@@ -55,7 +59,7 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	case *parser.BinaryExpression:
 		return EvalBinaryExpression(node, env)
 	case *parser.FunctionDeclaration:
-		return EvalFunctionDeclaration(node, env)
+		return EvalFunctionDeclaration(node, env, nil)
 	case *parser.IfStatement:
 		return EvalIfStatement(node, env)
 	case *parser.ElseIfStatement:
@@ -87,10 +91,11 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
 	scope := enviroment.NewEnv(env)
 	className := node.Name.(*lexar.Token).Value.(string)
+	obj := types.NewObject(className, scope)
 	for _, method := range env.GetVariable(className, -1).(*parser.ClassDeclaration).Methods {
-		EvalFunctionDeclaration(method, scope)
+		EvalFunctionDeclaration(method, scope, obj)
 	}
-	return types.NewObject(className, scope)
+	return obj
 }
 
 func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
@@ -229,11 +234,12 @@ func EvalIdentifier(node *parser.IdentifierStatement, env *enviroment.Enviroment
 	return env.GetVariable(name, -1)
 }
 
-func EvalFunctionDeclaration(node *parser.FunctionDeclaration, env *enviroment.Enviroment) any {
+func EvalFunctionDeclaration(node *parser.FunctionDeclaration, env *enviroment.Enviroment, ownerObject any) any {
 	fn := &types.FunctionDeclaration{
-		Type:   types.Function,
-		Body:   node.Body,
-		Params: node.Params,
+		Type:        types.Function,
+		Body:        node.Body,
+		Params:      node.Params,
+		OwnerObject: ownerObject,
 	}
 	return env.DeclareVariable(node.Name, fn, node.Statement.Line)
 }
@@ -308,11 +314,20 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 	}
 	switch v := Interpreter(node.Caller, scope).(type) {
 	case *types.NativeFunctionDeclaration:
-		call := v.Call.(func(...any))
-		call(args...)
-		return nil
+		fun := reflect.ValueOf(v.Call)
+		callArgs := make([]reflect.Value, len(args))
+		for i, arg := range args {
+			callArgs[i] = reflect.ValueOf(arg)
+		}
+		out := fun.Call(callArgs)
+		var results = make([]any, len(out))
+		for i, res := range out {
+			results[i] = res.Interface()
+		}
+		return results
 	case *types.FunctionDeclaration:
 		var result any
+		scope.DeclareVariable("this", v.OwnerObject, -1)
 		for _, statement := range v.Body {
 			result = Interpreter(statement, scope)
 			if isReturn, response := IsReturn(result); isReturn {
