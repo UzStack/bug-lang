@@ -32,6 +32,7 @@ const (
 	If
 	ElseIf
 	Else
+	New
 
 	// Conditions / loops
 	For
@@ -60,4 +61,5 @@ var Keywords = map[string]TokenType{
 	"continue": Continue,
 	"break":    Break,
 	"class":    Class,
+	"new":      New,
 }

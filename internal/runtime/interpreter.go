@@ -2,14 +2,35 @@ package runtime
 
 import (
 	"reflect"
-	"strings"
 
+	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/internal/parser"
 	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
+	"github.com/UzStack/bug-lang/internal/runtime/std"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	"github.com/UzStack/bug-lang/pkg/utils"
 	"github.com/k0kubun/pp"
 )
+
+func Init(ast any, env *enviroment.Enviroment) any {
+	env.DeclareVariable("print", &types.NativeFunctionDeclaration{
+		Type: "native-function",
+		Call: std.Print,
+	}, -1)
+	env.DeclareVariable("true", &types.RuntimeValue{
+		Type:  "variable",
+		Value: true,
+	}, -1)
+	env.DeclareVariable("false", &types.RuntimeValue{
+		Type:  "variable",
+		Value: false,
+	}, -1)
+	env.DeclareVariable("null", &types.RuntimeValue{
+		Type:  "variable",
+		Value: nil,
+	}, -1)
+	return Interpreter(ast, env)
+}
 
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	switch node := astBody.(type) {
@@ -28,7 +49,7 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	case *parser.IdentifierStatement:
 		return EvalIdentifier(node, env)
 	case *parser.CallStatement:
-		return CallStatement(node, env)
+		return EvalCallStatement(node, env)
 	case *parser.VariableDeclaration:
 		return VariableDeclaration(node, env)
 	case *parser.BinaryExpression:
@@ -53,27 +74,42 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return EvalArrayExpression(node, env)
 	case *parser.ClassDeclaration:
 		return EvalClassDeclaration(node, env)
+	case *parser.MapExpression:
+		return EvalMapDeclaration(node, env)
 	case *parser.ObjectExpression:
-		return EvalObjectDeclaration(node, env)
+		return EvalObjectExpression(node, env)
 	default:
 		// fmt.Printf("Tip: %T", astBody)
 	}
 	return nil
 }
 
-func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
-	for _, statement := range node.Body {
-		Interpreter(statement, env)
+func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
+	scope := enviroment.NewEnv(env)
+	className := node.Name.(*lexar.Token).Value.(string)
+	for _, method := range env.GetVariable(className, -1).(*parser.ClassDeclaration).Methods {
+		EvalFunctionDeclaration(method, scope)
 	}
+	return types.NewObject(className, scope)
+}
+
+func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
+	env.DeclareVariable(node.Name.(*lexar.Token).Value.(string), node, node.Line)
 	return nil
 }
 
-func EvalObjectDeclaration(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
+func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Enviroment) any {
+	env.DeclareVariable(node.Name, Interpreter(node.Value, env), node.Line)
+	return nil
+}
+
+func EvalMapDeclaration(node *parser.MapExpression, env *enviroment.Enviroment) any {
 	values := make(map[string]any)
 	for key, item := range node.Values {
 		values[key] = Interpreter(item, env)
 	}
-	return types.NewObject(values)
+	// return types.NewObject(values)
+	return nil
 }
 func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviroment) any {
 	var values []any
@@ -96,18 +132,18 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 		case *types.ArrayValue:
 			index, _ := utils.Str2Int(Interpreter(node.Prop, env).(*types.RuntimeValue).Value)
 			return t.Values[index]
-		case *types.ObjectValue:
-			return t.Values[Interpreter(node.Prop, env).(*types.RuntimeValue).Value.(string)]
+		// case *types.ObjectValue:
+		// return t.Values[Interpreter(node.Prop, env).(*types.RuntimeValue).Value.(string)]
 		default:
-			pp.Print(t)
 			return nil
 		}
 
 	} else {
-		left := Interpreter(node.Left, env)
-		v := reflect.ValueOf(left)
+		left := Interpreter(node.Left, env).(*types.ObjectValue)
 		name := node.Prop.(*parser.IdentifierStatement).Value.(string)
-		return v.MethodByName(string(strings.ToUpper(name[:1]) + name[1:]))
+		return left.Enviroment.GetVariable(name, -1)
+		// v := reflect.ValueOf(left)
+		// return v.MethodByName(string(strings.ToUpper(name[:1]) + name[1:]))
 	}
 }
 
@@ -117,9 +153,10 @@ func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment
 }
 
 func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any {
+	scope := enviroment.NewEnv(env)
 	for Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
 		for _, statement := range node.Body {
-			result := Interpreter(statement, env)
+			result := Interpreter(statement, scope)
 			if isReturn, response := IsReturn(result); isReturn {
 				return response
 			}
@@ -191,6 +228,7 @@ func EvalIdentifier(node *parser.IdentifierStatement, env *enviroment.Enviroment
 	name, _ := node.Value.(string)
 	return env.GetVariable(name, -1)
 }
+
 func EvalFunctionDeclaration(node *parser.FunctionDeclaration, env *enviroment.Enviroment) any {
 	fn := &types.FunctionDeclaration{
 		Type:   types.Function,
@@ -254,11 +292,6 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 	}
 }
 
-func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Enviroment) any {
-	env.DeclareVariable(node.Name, Interpreter(node.Value, env), node.Line)
-	return nil
-}
-
 func IsReturn(result any) (bool, any) {
 	switch val := result.(type) {
 	case *types.ReturnValue:
@@ -267,12 +300,13 @@ func IsReturn(result any) (bool, any) {
 	return false, nil
 }
 
-func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
+func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
+	scope := enviroment.NewEnv(env)
 	var args []any
 	for _, arg := range node.Args {
-		args = append(args, Interpreter(arg, env))
+		args = append(args, Interpreter(arg, scope))
 	}
-	switch v := Interpreter(node.Caller, env).(type) {
+	switch v := Interpreter(node.Caller, scope).(type) {
 	case *types.NativeFunctionDeclaration:
 		call := v.Call.(func(...any))
 		call(args...)
@@ -280,7 +314,7 @@ func CallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
 	case *types.FunctionDeclaration:
 		var result any
 		for _, statement := range v.Body {
-			result = Interpreter(statement, env)
+			result = Interpreter(statement, scope)
 			if isReturn, response := IsReturn(result); isReturn {
 				return response.(*types.ReturnValue).Value
 			}

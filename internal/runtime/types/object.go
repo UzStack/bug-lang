@@ -1,15 +1,25 @@
 package types
 
+import (
+	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
+)
+
 type ObjectValue struct {
-	Values map[string]any
+	Name       string
+	Enviroment *enviroment.Enviroment
 }
 
-func NewObject(values map[string]any) Object {
+func NewObject(name string, env *enviroment.Enviroment) Object {
 	return &ObjectValue{
-		Values: values,
+		Name:       name,
+		Enviroment: env,
 	}
 }
 
+func (o *ObjectValue) GetEnviroment() *enviroment.Enviroment {
+	return o.Enviroment
+}
+
 func (a *ObjectValue) GetValue() any {
-	return a.Values
+	return a.Name
 }

@@ -1,7 +1,10 @@
-var names = [1,2,3];
-var user = {
-    "name": "Samandar",
-    "age": "10",
+class User(){
+    func name(){
+        var name = "Samandar";
+        print(name);
+    }
 }
 
-print(user["age"] + 1);
+var user = new User(1,2,3);
+
+print(user.name())
