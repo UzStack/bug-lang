@@ -1,19 +1,17 @@
 
 
 class User(){
-    func name(name){
-        return name;
-    }
 
-    func add(age){
-        return age + 20;
+    func init(){
+        this.name = "Samandar";
+        print(this.name);
     }
-    func hello(){
-        var name = "Samandar";
-        print("Salom", this.name(name), this.add(19));
+    func destruct(){
+        print(this.age);
     }
 }
 
 var user = new User();
-
-user.hello();
+user.init();
+user.age = 20;
+user.destruct();

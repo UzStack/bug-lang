@@ -142,6 +142,7 @@ type MemberExpression struct {
 	Left     any
 	Prop     any
 	Computed bool
+	Assign   any
 }
 
 type ClassDeclaration struct {

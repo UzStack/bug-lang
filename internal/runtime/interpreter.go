@@ -143,6 +143,10 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 			return nil
 		}
 
+	} else if node.Assign != nil {
+		left := Interpreter(node.Left, env).(*types.ObjectValue)
+		name := node.Prop.(*parser.IdentifierStatement).Value.(string)
+		return left.Enviroment.DeclareVariable(name, node.Assign, -1)
 	} else {
 		left := Interpreter(node.Left, env).(*types.ObjectValue)
 		name := node.Prop.(*parser.IdentifierStatement).Value.(string)
@@ -153,7 +157,13 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 }
 
 func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) any {
-	env.AssignmenVariable(node.Owner.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Value, env), node.Statement.Line)
+	switch t := node.Owner.(type) {
+	case *parser.MemberExpression:
+		t.Assign = Interpreter(node.Value, env)
+		Interpreter(t, env)
+	default:
+		env.AssignmenVariable(node.Owner.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Value, env), node.Statement.Line)
+	}
 	return nil
 }
 
