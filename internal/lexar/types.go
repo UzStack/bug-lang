@@ -7,6 +7,7 @@ const (
 	Number TokenType = iota
 	Identifier
 	String
+	Import
 
 	// Grouping operators
 	BinaryOperator
@@ -62,4 +63,5 @@ var Keywords = map[string]TokenType{
 	"break":    Break,
 	"class":    Class,
 	"new":      New,
+	"import":   Import,
 }

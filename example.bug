@@ -1,19 +1,5 @@
+import "user";
 
+u = new user.User("Azamov","Samandar", 20);
 
-class User(){
-    func init(first_name, last_name, age){
-        this.first_name = first_name;
-        this.last_name = last_name;
-        this.age = age;
-        this.birthDay = 23;
-    }
-    func hello(){
-        print("FirstName: ", this.first_name);
-        print("LastName", this.last_name);
-        print("Age: ", this.age);
-    }
-}
-user = new User("Samandar", "Azamov", 20);
-user.hello();
-user = new User("Husanboy", "Azamov", 17);
-user.hello();
+u.hello();

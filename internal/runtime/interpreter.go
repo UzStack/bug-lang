@@ -47,6 +47,8 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 			Type:  types.Number,
 			Value: node.Value,
 		}
+	case *parser.Module:
+		return EvalModuleStatement(node, env)
 	case *parser.Program:
 		return EvalProgram(node, env)
 	case *parser.IdentifierStatement:
@@ -87,20 +89,52 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	return nil
 }
 
+func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) any {
+	scope := enviroment.NewGlobalEnv()
+	var lastResult any
+	for _, stmt := range node.Body {
+		lastResult = Interpreter(stmt, scope)
+	}
+	env.DeclareVariable(node.Name, scope.Variables, -1)
+	return lastResult
+}
+
 func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
+	caller := node.Caller.(*parser.CallStatement)
+	var methods []*parser.FunctionDeclaration
+	var className string
+
+	switch t := caller.Caller.(type) {
+	case *parser.IdentifierStatement:
+		className = t.Value.(string)
+		methods = env.GetVariable(className, -1).(*parser.ClassDeclaration).Methods
+	case *parser.MemberExpression:
+		className = t.Prop.(*parser.IdentifierStatement).Value.(string)
+		methods = Interpreter(t, env).(*parser.ClassDeclaration).Methods
+	}
 	scope := enviroment.NewEnv(env)
-	className := node.Name.(*lexar.Token).Value.(string)
 	obj := types.NewObject(className, scope)
-	for _, method := range env.GetVariable(className, -1).(*parser.ClassDeclaration).Methods {
+	EvalFunctionDeclaration(&parser.FunctionDeclaration{
+		Name: "init",
+		Statement: &parser.Statement{
+			Line: -1,
+			Kind: parser.FunctionDeclarationNode,
+		},
+		Body:   []any{},
+		Params: []*parser.IdentifierStatement{},
+	}, scope, obj)
+	for _, method := range methods {
 		EvalFunctionDeclaration(method, scope, obj)
 	}
+
 	EvalCallStatement(&parser.CallStatement{
 		Caller: &parser.IdentifierStatement{
 			Value: "init",
 		},
-		Args: node.Args,
+		Args: caller.Args,
 	}, scope)
 	return obj
+
 }
 
 func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
@@ -153,9 +187,15 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 		name := node.Prop.(*parser.IdentifierStatement).Value.(string)
 		return left.Enviroment.DeclareVariable(name, node.Assign, -1)
 	} else {
-		left := Interpreter(node.Left, env).(*types.ObjectValue)
-		name := node.Prop.(*parser.IdentifierStatement).Value.(string)
-		return left.Enviroment.GetVariable(name, -1)
+		left := Interpreter(node.Left, env)
+		switch t := left.(type) {
+		case *types.ObjectValue:
+			name := node.Prop.(*parser.IdentifierStatement).Value.(string)
+			return t.Enviroment.GetVariable(name, -1)
+		default:
+			return t.(map[string]any)[node.Prop.(*parser.IdentifierStatement).Value.(string)]
+		}
+
 		// v := reflect.ValueOf(left)
 		// return v.MethodByName(string(strings.ToUpper(name[:1]) + name[1:]))
 	}
@@ -256,7 +296,7 @@ func EvalFunctionDeclaration(node *parser.FunctionDeclaration, env *enviroment.E
 		Params:      node.Params,
 		OwnerObject: ownerObject,
 	}
-	return env.DeclareVariable(node.Name, fn, node.Statement.Line)
+	return env.AssignmenVariable(node.Name, fn, node.Statement.Line)
 }
 
 func EvalProgram(node *parser.Program, env *enviroment.Enviroment) any {

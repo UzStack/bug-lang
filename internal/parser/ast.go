@@ -37,6 +37,11 @@ type Program struct {
 	*Statement
 	Body []any
 }
+type Module struct {
+	*Statement
+	Name string
+	Body []any
+}
 
 type BinaryExpression struct {
 	*Statement
@@ -154,6 +159,5 @@ type ClassDeclaration struct {
 
 type ObjectExpression struct {
 	*Statement
-	Args []any
-	Name any
+	Caller any
 }

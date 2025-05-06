@@ -3,6 +3,8 @@ package parser
 import (
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/pkg/utils"
@@ -67,11 +69,8 @@ func (p *parser) ParseNewObjectExpression() any {
 		return p.ParseArrayExpression()
 	}
 	p.Next()
-	identifier := p.Except(lexar.Identifier, "Except Identifier new object")
-	args := p.ParseArgs()
 	return &ObjectExpression{
-		Name: identifier,
-		Args: args,
+		Caller: p.ParseAssignmentExpression(),
 	}
 }
 
@@ -481,6 +480,34 @@ func (p *parser) ParseFnDeclaration() *FunctionDeclaration {
 	}
 }
 
+func (p *parser) ParseImportStatement() any {
+	p.Next()
+	module := p.ParseAssignmentExpression()
+	path := strings.Replace(module.(*StringLiteral).Value.(string), ".", "/", -1) + ".bug"
+	nameSegments := strings.Split(module.(*StringLiteral).Value.(string), ".")
+	name := nameSegments[len(nameSegments)-1]
+	tokenizer := lexar.NewTokenize()
+	code, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	tokens := tokenizer.Tokenize(string(code))
+	parser := NewParser(tokens)
+	program := &Module{
+		Statement: &Statement{
+			Kind: ProgramNode,
+			Line: -1,
+		},
+		Name: name,
+		Body: []any{},
+	}
+	for parser.IsEOF() {
+		stmt := parser.ParseStatement()
+		program.Body = append(program.Body, stmt)
+	}
+	return program
+}
+
 func (p *parser) ParseStatement() any {
 	switch p.At().Type {
 	case lexar.Var:
@@ -495,6 +522,8 @@ func (p *parser) ParseStatement() any {
 		return p.ParseReturnStatement()
 	case lexar.Class:
 		return p.ParseClassStatement()
+	case lexar.Import:
+		return p.ParseImportStatement()
 	default:
 		return p.ParseAssignmentExpression()
 	}
