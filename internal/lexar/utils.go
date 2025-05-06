@@ -1,6 +1,8 @@
 package lexar
 
-import "regexp"
+import (
+	"regexp"
+)
 
 func IsAlpha(value string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
