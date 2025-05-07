@@ -186,8 +186,10 @@ func (p *parser) ParseArrayItems() []any {
 	var params []any
 	p.Except(lexar.OpenBracket, "Except open bracket Array")
 	if p.At().Type == lexar.CloseBracket {
+		p.Next()
 		return params
 	}
+
 	params = append(params, p.ParseAssignmentExpression())
 	for p.At().Type != lexar.CloseBracket {
 		if p.At().Type == lexar.Comma {

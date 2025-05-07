@@ -10,20 +10,52 @@ import (
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 )
 
-func Print(values ...any) {
+func QuotationMark(value any) bool {
+	switch value.(type) {
+	case *types.StringValue:
+		return true
+	default:
+		return false
+	}
+}
+
+func Pprint(values ...any) {
 	for _, val := range values {
 		switch v := val.(type) {
-		case *types.RuntimeValue:
-			fmt.Print(v.Value, " ")
+		case *types.StringValue:
+			fmt.Print(v.GetValue())
+		case *types.IntValue:
+			fmt.Print(v.GetValue())
 		case *types.ArrayValue:
 			fmt.Print("[")
 			for index, el := range v.Values {
-				fmt.Print(el.(*types.RuntimeValue).Value)
+				Pprint(el)
 				if index < len(v.Values)-1 {
 					fmt.Print(",")
 				}
 			}
-			fmt.Print("]\n")
+			fmt.Print("]")
+		case *types.MapValue:
+			fmt.Print("{")
+			i := 0
+			values := v.GetValue().(map[string]any)
+			size := len(values)
+			for key, value := range values {
+				i++
+				fmt.Print("\"", key, "\"", ":")
+				isQuotationMark := QuotationMark(value)
+				if isQuotationMark {
+					fmt.Print("\"")
+				}
+				Pprint(value)
+				if isQuotationMark {
+					fmt.Print("\"")
+				}
+				if size != i {
+					fmt.Print(",")
+				}
+			}
+			fmt.Print("}")
 		default:
 			refValue := reflect.ValueOf(val)
 			if refValue.Kind() == reflect.Slice {
@@ -33,6 +65,9 @@ func Print(values ...any) {
 			}
 		}
 	}
+}
+func Print(values ...any) {
+	Pprint(values...)
 	fmt.Print("\t\n")
 }
 

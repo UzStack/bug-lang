@@ -14,16 +14,7 @@ func Load(env *enviroment.Enviroment) {
 		Type: "native-function",
 		Call: Input,
 	}, -1)
-	env.DeclareVariable("true", &types.RuntimeValue{
-		Type:  "variable",
-		Value: true,
-	}, -1)
-	env.DeclareVariable("false", &types.RuntimeValue{
-		Type:  "variable",
-		Value: false,
-	}, -1)
-	env.DeclareVariable("null", &types.RuntimeValue{
-		Type:  "variable",
-		Value: nil,
-	}, -1)
+	env.DeclareVariable("true", types.NewBool(true), -1)
+	env.DeclareVariable("false", types.NewBool(false), -1)
+	env.DeclareVariable("null", types.NewNull(nil), -1)
 }

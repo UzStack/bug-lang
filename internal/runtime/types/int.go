@@ -1,11 +1,13 @@
 package types
 
 type IntValue struct {
-	Value int
+	Value any
 }
 
-func NewInt() Object {
-	return &IntValue{}
+func NewInt(value any) Object {
+	return &IntValue{
+		Value: value,
+	}
 }
 func (a *IntValue) GetValue() any {
 	return a.Value
