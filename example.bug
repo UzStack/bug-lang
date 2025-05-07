@@ -1,7 +1,8 @@
 import "user" as us;
 import "test";
 
-test.test.name();
+var name = test.test.name();
+print(name);
 us.user.hello();
 
 var i = 1;

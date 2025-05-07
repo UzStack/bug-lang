@@ -2,6 +2,7 @@
 class Test(){
     func name(){
         print("Test");
+        return "Samandar";
     }
 }
 
