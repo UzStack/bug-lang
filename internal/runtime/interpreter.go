@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/internal/parser"
@@ -19,15 +20,9 @@ func Init(ast any, env *enviroment.Enviroment) any {
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	switch node := astBody.(type) {
 	case *parser.NumberLiteral:
-		return &types.RuntimeValue{
-			Type:  types.Number,
-			Value: node.Value,
-		}
+		return types.NewInt(node.Value)
 	case *parser.StringLiteral:
-		return &types.RuntimeValue{
-			Type:  types.Number,
-			Value: node.Value,
-		}
+		return types.NewString(node.Value)
 	case *parser.Module:
 		return EvalModuleStatement(node, env)
 	case *parser.Program:
@@ -65,6 +60,7 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	case *parser.ObjectExpression:
 		return EvalObjectExpression(node, env)
 	default:
+		return node
 		// fmt.Printf("Tip: %T", astBody)
 	}
 	return nil
@@ -135,11 +131,11 @@ func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Envir
 
 func EvalMapDeclaration(node *parser.MapExpression, env *enviroment.Enviroment) any {
 	values := make(map[string]any)
+
 	for key, item := range node.Values {
 		values[key] = Interpreter(item, env)
 	}
-	// return types.NewObject(values)
-	return nil
+	return types.NewMap(values)
 }
 func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviroment) any {
 	var values []any
@@ -160,10 +156,17 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 	if node.Computed {
 		switch t := Interpreter(node.Left, env).(type) {
 		case *types.ArrayValue:
-			index, _ := utils.Str2Int(Interpreter(node.Prop, env).(*types.RuntimeValue).Value)
+			index, _ := utils.Str2Int(Interpreter(node.Prop, env).(types.Object).GetValue())
 			return t.Values[index]
 		// case *types.ObjectValue:
-		// return t.Values[Interpreter(node.Prop, env).(*types.RuntimeValue).Value.(string)]
+		// return t.Values[Interpreter(node.Prop, env).(types.Object).GetValue().(string)]
+		case *types.MapValue:
+			name := Interpreter(node.Prop, env).(types.Object)
+			if node.Assign != nil {
+				t.Values[name.GetValue().(string)] = node.Assign
+			}
+			index, _ := Interpreter(node.Prop, env).(types.Object).GetValue().(string)
+			return t.Values[index]
 		default:
 			return nil
 		}
@@ -178,12 +181,14 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 		case *types.ObjectValue:
 			name := node.Prop.(*parser.IdentifierStatement).Value.(string)
 			return t.Enviroment.GetVariable(name, -1)
+		case types.Object:
+			v := reflect.ValueOf(left)
+			name := node.Prop.(*parser.IdentifierStatement).Value.(string)
+			return v.MethodByName(string(strings.ToUpper(name[:1]) + name[1:]))
 		default:
 			return t.(map[string]any)[node.Prop.(*parser.IdentifierStatement).Value.(string)]
 		}
 
-		// v := reflect.ValueOf(left)
-		// return v.MethodByName(string(strings.ToUpper(name[:1]) + name[1:]))
 	}
 }
 
@@ -200,7 +205,7 @@ func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment
 
 func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any {
 	// scope := enviroment.NewEnv(env) NOTE: for uchun scope yaratilsa condition xato ishlamoqda to'g'irlash kerak
-	for Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
+	for Interpreter(node.Condition, env).(types.Object).GetValue().(bool) {
 		for _, statement := range node.Body {
 			result := Interpreter(statement, env)
 			if isReturn, response := IsReturn(result); isReturn {
@@ -212,7 +217,7 @@ func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any
 }
 
 func EvalIfStatement(node *parser.IfStatement, env *enviroment.Enviroment) any {
-	if Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
+	if Interpreter(node.Condition, env).(types.Object).GetValue().(bool) {
 		for _, statement := range node.Body {
 			result := Interpreter(statement, env)
 			if isReturn, response := IsReturn(result); isReturn {
@@ -240,7 +245,7 @@ func EvalIfStatement(node *parser.IfStatement, env *enviroment.Enviroment) any {
 }
 
 func EvalElseIfStatement(node *parser.ElseIfStatement, env *enviroment.Enviroment) any {
-	if Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
+	if Interpreter(node.Condition, env).(types.Object).GetValue().(bool) {
 		for _, statement := range node.Body {
 			result := Interpreter(statement, env)
 			if isReturn, response := IsReturn(result); isReturn {
@@ -296,17 +301,18 @@ func EvalProgram(node *parser.Program, env *enviroment.Enviroment) any {
 func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Enviroment) any {
 	var value any
 	if utils.InArray(node.Operator, []any{"&&", "||"}) {
-		left := Interpreter(node.Left, env).(*types.RuntimeValue).Value.(bool)
-		right := Interpreter(node.Right, env).(*types.RuntimeValue).Value.(bool)
+		left := Interpreter(node.Left, env).(types.Object).GetValue().(bool)
+		right := Interpreter(node.Right, env).(types.Object).GetValue().(bool)
 		switch node.Operator {
 		case "&&":
 			value = left && right
 		case "||":
 			value = left || right
 		}
+		return types.NewBool(value)
 	} else {
-		left, _ := utils.Str2Int(Interpreter(node.Left, env).(*types.RuntimeValue).Value)
-		right, _ := utils.Str2Int(Interpreter(node.Right, env).(*types.RuntimeValue).Value)
+		left, _ := utils.Str2Int(Interpreter(node.Left, env).(types.Object).GetValue())
+		right, _ := utils.Str2Int(Interpreter(node.Right, env).(types.Object).GetValue())
 		switch node.Operator {
 		case "+":
 			value = left + right
@@ -331,10 +337,7 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 		case "<":
 			value = left < right
 		}
-	}
-	return &types.RuntimeValue{
-		Type:  types.String,
-		Value: value,
+		return types.NewInt(value)
 	}
 }
 
@@ -383,7 +386,10 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 		for i, arg := range args {
 			callArgs[i] = reflect.ValueOf(arg)
 		}
-		return v.Call(callArgs)
+		if res := v.Call(callArgs); len(res) >= 1 {
+			return res[0].Interface()
+		}
+		return nil
 		// default:
 
 	}

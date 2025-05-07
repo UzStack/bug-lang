@@ -31,11 +31,6 @@ type RuntimeValue struct {
 	Value any
 }
 
-type NullValue struct {
-	Type  RuntimeTypes
-	Value any
-}
-
 type FlowValue struct {
 	Type    RuntimeTypes
 	Catched bool

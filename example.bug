@@ -1,9 +1,15 @@
-import "user" as us;
-import "test";
+var map = {
+    "name":"Samandar",
+    "age": 20,
+    "test": [1,2,3,4,5, {
+        "name":"Samandar",
+        "age":1,
+        "test": [],
+    }],
+    "address": {
+        "region":1,
+    },
+}
 
-test.test.name();
-us.user.hello();
-
-var i = 1;
-i = i + 20;
-print(i);
+var arr = [];
+print(map);
