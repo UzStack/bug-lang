@@ -12,26 +12,7 @@ import (
 )
 
 func Init(ast any, env *enviroment.Enviroment) any {
-	env.DeclareVariable("print", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: std.Print,
-	}, -1)
-	env.DeclareVariable("input", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: std.Input,
-	}, -1)
-	env.DeclareVariable("true", &types.RuntimeValue{
-		Type:  "variable",
-		Value: true,
-	}, -1)
-	env.DeclareVariable("false", &types.RuntimeValue{
-		Type:  "variable",
-		Value: false,
-	}, -1)
-	env.DeclareVariable("null", &types.RuntimeValue{
-		Type:  "variable",
-		Value: nil,
-	}, -1)
+	std.Load(env)
 	return Interpreter(ast, env)
 }
 
@@ -91,11 +72,16 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 
 func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) any {
 	scope := enviroment.NewGlobalEnv()
+	std.Load(scope)
 	var lastResult any
+	if module := enviroment.Modules.Get(node.Path); module != nil {
+		return env.DeclareVariable(node.Name, module, -1)
+	}
 	for _, stmt := range node.Body {
 		lastResult = Interpreter(stmt, scope)
 	}
 	env.DeclareVariable(node.Name, scope.Variables, -1)
+	enviroment.Modules.Add(node.Path, scope.Variables)
 	return lastResult
 }
 
@@ -346,7 +332,6 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 			value = left < right
 		}
 	}
-
 	return &types.RuntimeValue{
 		Type:  types.String,
 		Value: value,
