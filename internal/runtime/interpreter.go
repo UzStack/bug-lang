@@ -213,10 +213,10 @@ func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment
 }
 
 func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any {
-	scope := enviroment.NewEnv(env)
+	// scope := enviroment.NewEnv(env) NOTE: for uchun scope yaratilsa condition xato ishlamoqda to'g'irlash kerak
 	for Interpreter(node.Condition, env).(*types.RuntimeValue).Value.(bool) {
 		for _, statement := range node.Body {
-			result := Interpreter(statement, scope)
+			result := Interpreter(statement, env)
 			if isReturn, response := IsReturn(result); isReturn {
 				return response
 			}
