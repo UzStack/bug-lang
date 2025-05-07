@@ -13,3 +13,6 @@ class User(){
         print("Age: ", this.age);
     }
 }
+
+
+var user = new User("Azamov", "Samandar", 20);

@@ -482,10 +482,16 @@ func (p *parser) ParseFnDeclaration() *FunctionDeclaration {
 
 func (p *parser) ParseImportStatement() any {
 	p.Next()
+	var name string
 	module := p.ParseAssignmentExpression()
 	path := strings.Replace(module.(*StringLiteral).Value.(string), ".", "/", -1) + ".bug"
 	nameSegments := strings.Split(module.(*StringLiteral).Value.(string), ".")
-	name := nameSegments[len(nameSegments)-1]
+	if p.At().Type == lexar.As {
+		p.Next()
+		name = p.Next().Value.(string)
+	} else {
+		name = nameSegments[len(nameSegments)-1]
+	}
 	tokenizer := lexar.NewTokenize()
 	code, err := os.ReadFile(path)
 	if err != nil {

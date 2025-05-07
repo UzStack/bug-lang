@@ -34,6 +34,7 @@ const (
 	ElseIf
 	Else
 	New
+	As
 
 	// Conditions / loops
 	For
@@ -64,4 +65,5 @@ var Keywords = map[string]TokenType{
 	"class":    Class,
 	"new":      New,
 	"import":   Import,
+	"as":       As,
 }
