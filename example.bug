@@ -1,5 +1,3 @@
 import "user" as us;
 
-u = new us.User("Azamov","Samandar", 20);
-
-u.hello();
+us.user.hello();
