@@ -1,4 +1,4 @@
-
+import "test";
 
 class User(){
     func init(first_name, last_name, age){
@@ -14,5 +14,5 @@ class User(){
     }
 }
 
-
 var user = new User("Azamov", "Samandar", 20);
+test.test.name();

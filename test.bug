@@ -1,0 +1,8 @@
+
+class Test(){
+    func name(){
+        print("Test");
+    }
+}
+
+var test = new Test();

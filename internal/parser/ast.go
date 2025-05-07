@@ -41,6 +41,7 @@ type Module struct {
 	*Statement
 	Name string
 	Body []any
+	Path string
 }
 
 type BinaryExpression struct {

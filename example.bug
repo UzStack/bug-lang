@@ -1,3 +1,9 @@
 import "user" as us;
+import "test";
 
+test.test.name();
 us.user.hello();
+
+var i = 1;
+i = i + 20;
+print(i);

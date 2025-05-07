@@ -1,8 +1,6 @@
 package types
 
-import (
-	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
-)
+import "github.com/UzStack/bug-lang/internal/runtime/enviroment"
 
 type ObjectValue struct {
 	Name       string

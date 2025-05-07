@@ -505,6 +505,7 @@ func (p *parser) ParseImportStatement() any {
 			Line: -1,
 		},
 		Name: name,
+		Path: path,
 		Body: []any{},
 	}
 	for parser.IsEOF() {
