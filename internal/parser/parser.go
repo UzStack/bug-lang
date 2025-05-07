@@ -486,8 +486,8 @@ func (p *parser) ParseImportStatement() any {
 	p.Next()
 	var name string
 	module := p.ParseAssignmentExpression()
-	path := strings.Replace(module.(*StringLiteral).Value.(string), ".", "/", -1) + ".bug"
-	nameSegments := strings.Split(module.(*StringLiteral).Value.(string), ".")
+	path := strings.Replace(module.(*IdentifierStatement).Value.(string), ".", "/", -1) + ".bug"
+	nameSegments := strings.Split(module.(*IdentifierStatement).Value.(string), ".")
 	if p.At().Type == lexar.As {
 		p.Next()
 		name = p.Next().Value.(string)

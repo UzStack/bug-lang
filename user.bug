@@ -1,11 +1,11 @@
-import "test";
+import test;
 
 class User(){
     func init(first_name, last_name, age){
         this.first_name = first_name;
         this.last_name = last_name;
         this.age = age;
-        this.birthDay = 23;
+        this.birthDay = 23; 
     }
     func hello(){
         print("FirstName: ", this.first_name);

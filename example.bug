@@ -1,3 +1,5 @@
+import user
+
 var map = {
     "name":"Samandar",
     "age": 20,
@@ -11,5 +13,10 @@ var map = {
     },
 }
 
-var arr = [];
-print(map);
+var arr = [
+    {
+        "age": 20,
+    }
+];
+arr[0]["age"] = 21;
+print(arr);
