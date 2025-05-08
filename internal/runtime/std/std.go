@@ -7,8 +7,15 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/UzStack/bug-lang/internal/runtime/std/libs"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 )
+
+var STDLIBS = map[string]map[string]any{
+	"math": {
+		"round": libs.Round,
+	},
+}
 
 func QuotationMark(value any) bool {
 	switch value.(type) {
@@ -25,6 +32,8 @@ func Pprint(values ...any) {
 		case *types.StringValue:
 			fmt.Print(v.GetValue())
 		case *types.IntValue:
+			fmt.Print(v.GetValue())
+		case *types.FloatValue:
 			fmt.Print(v.GetValue())
 		case *types.ArrayValue:
 			fmt.Print("[")

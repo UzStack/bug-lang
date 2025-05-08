@@ -5,6 +5,7 @@ type TokenType int
 const (
 	// Literal types
 	Number TokenType = iota
+	Float
 	Identifier
 	String
 	Import

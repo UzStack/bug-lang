@@ -42,8 +42,10 @@ func (tokenize *tokenize) token(value any, tokenType TokenType) {
 func (t *tokenize) Handle() {
 	if IsAlpha(t.TempWord) {
 		t.SaveAlpha()
-	} else if IsNumber(t.TempWord) {
+	} else if IsSignedNumber(t.TempWord) {
 		t.token(t.TempWord, Number)
+	} else if IsSignedFloat(t.TempWord) {
+		t.token(t.TempWord, Float)
 	}
 	t.TempWord = ""
 }
@@ -95,6 +97,11 @@ func (t *tokenize) Tokenize(code string) []*Token {
 			t.FindEnd()
 			continue
 		}
+		if char == "-" && IsNumber(t.At()) && t.TempWord == "" {
+			t.Handle()
+			t.TempWord += char
+			continue
+		}
 		if utils.InArray(char, []any{"+", "-", "/", "*", "%"}) {
 			t.Handle()
 			t.token(char, BinaryOperator)
@@ -107,10 +114,6 @@ func (t *tokenize) Tokenize(code string) []*Token {
 		if char == "," {
 			t.Handle()
 			t.token(char, Comma)
-		}
-		if char == "." {
-			t.Handle()
-			t.token(char, Dot)
 		}
 
 		if char == "(" {
@@ -137,14 +140,27 @@ func (t *tokenize) Tokenize(code string) []*Token {
 			t.Handle()
 			t.token(char, CloseBracket)
 		}
-		if IsAlpha(char) {
-			t.TempWord += char
-			continue
-		}
+
 		if IsNumber(char) {
 			t.TempWord += char
 			continue
 		}
+
+		if len(t.TempWord) >= 1 && IsSignedFloat(t.TempWord) {
+			t.TempWord += char
+			continue
+		}
+
+		if char == "." {
+			t.Handle()
+			t.token(char, Dot)
+		}
+
+		if IsAlpha(char) {
+			t.TempWord += char
+			continue
+		}
+
 		if utils.InArray(char, []any{"=", "<", ">", "!", "&", "|"}) {
 			t.Handle()
 			if utils.InArray(t.At(), []any{"&", "|", "="}) {

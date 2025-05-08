@@ -1,4 +1,4 @@
-import test;
+import "test";
 
 class User(){
     func init(first_name, last_name, age){

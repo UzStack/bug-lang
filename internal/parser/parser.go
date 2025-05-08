@@ -414,8 +414,11 @@ func (p *parser) ParsePrimaryExpression() any {
 			},
 			Value: p.Next().Value,
 		}
+	case lexar.Float:
+		return &FloatLiteral{
+			Value: p.Next().Value,
+		}
 	case lexar.String:
-
 		return &StringLiteral{
 			Statement: &Statement{
 				Kind: NumberLiteralNode,
@@ -485,14 +488,23 @@ func (p *parser) ParseFnDeclaration() *FunctionDeclaration {
 func (p *parser) ParseImportStatement() any {
 	p.Next()
 	var name string
-	module := p.ParseAssignmentExpression()
-	path := strings.Replace(module.(*IdentifierStatement).Value.(string), ".", "/", -1) + ".bug"
-	nameSegments := strings.Split(module.(*IdentifierStatement).Value.(string), ".")
+	module := p.ParseAssignmentExpression().(*StringLiteral).Value.(string)
+	path := strings.Replace(module, ".", "/", -1) + ".bug"
+	nameSegments := strings.Split(module, ".")
 	if p.At().Type == lexar.As {
 		p.Next()
 		name = p.Next().Value.(string)
 	} else {
 		name = nameSegments[len(nameSegments)-1]
+	}
+	if utils.InArray(module, STDLIBS) {
+		return &StdModule{
+			Statement: &Statement{
+				Line: p.At().Line,
+			},
+			Name: name,
+			Path: module,
+		}
 	}
 	tokenizer := lexar.NewTokenize()
 	code, err := os.ReadFile(path)

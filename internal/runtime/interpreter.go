@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
@@ -10,6 +11,7 @@ import (
 	"github.com/UzStack/bug-lang/internal/runtime/std"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	"github.com/UzStack/bug-lang/pkg/utils"
+	"github.com/k0kubun/pp/v3"
 )
 
 func Init(ast any, env *enviroment.Enviroment) any {
@@ -23,8 +25,12 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return types.NewInt(node.Value)
 	case *parser.StringLiteral:
 		return types.NewString(node.Value)
+	case *parser.FloatLiteral:
+		return types.NewFloat(node.Value)
 	case *parser.Module:
 		return EvalModuleStatement(node, env)
+	case *parser.StdModule:
+		return EvalStdModuleStatement(node, env)
 	case *parser.Program:
 		return EvalProgram(node, env)
 	case *parser.IdentifierStatement:
@@ -66,6 +72,10 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	return nil
 }
 
+func EvalStdModuleStatement(node *parser.StdModule, env *enviroment.Enviroment) any {
+	env.DeclareVariable(node.Name, types.NewStdLib(node.Name, std.STDLIBS[node.Path]), -1)
+	return nil
+}
 func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) any {
 	scope := enviroment.NewGlobalEnv()
 	std.Load(scope)
@@ -177,16 +187,17 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 		return left.Enviroment.DeclareVariable(name, node.Assign, -1)
 	} else {
 		left := Interpreter(node.Left, env)
+		prop := node.Prop.(*parser.IdentifierStatement).Value.(string)
 		switch t := left.(type) {
 		case *types.ObjectValue:
-			name := node.Prop.(*parser.IdentifierStatement).Value.(string)
-			return t.Enviroment.GetVariable(name, -1)
+			return t.Enviroment.GetVariable(prop, -1)
+		case *types.StdLibValue:
+			return reflect.ValueOf(t.Lib[prop])
 		case types.Object:
 			v := reflect.ValueOf(left)
-			name := node.Prop.(*parser.IdentifierStatement).Value.(string)
-			return v.MethodByName(string(strings.ToUpper(name[:1]) + name[1:]))
+			return v.MethodByName(string(strings.ToUpper(prop[:1]) + prop[1:]))
 		default:
-			return t.(map[string]any)[node.Prop.(*parser.IdentifierStatement).Value.(string)]
+			return t.(map[string]any)[prop]
 		}
 
 	}
@@ -311,8 +322,12 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 		}
 		return types.NewBool(value)
 	} else {
-		left, _ := utils.Str2Int(Interpreter(node.Left, env).(types.Object).GetValue())
-		right, _ := utils.Str2Int(Interpreter(node.Right, env).(types.Object).GetValue())
+		rightValue := Interpreter(node.Right, env)
+		leftValue := Interpreter(node.Left, env)
+
+		left, _ := strconv.ParseFloat(leftValue.(types.Object).GetValue().(string), 64)
+		right, _ := strconv.ParseFloat(rightValue.(types.Object).GetValue().(string), 64)
+
 		switch node.Operator {
 		case "+":
 			value = left + right
@@ -323,7 +338,7 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 		case "/":
 			value = left / right
 		case "%":
-			value = left % right
+			value = int(left) % int(right)
 		case "==":
 			value = left == right
 		case ">=":
@@ -336,6 +351,11 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 			value = left > right
 		case "<":
 			value = left < right
+		}
+		_, isRightFloat := rightValue.(*types.FloatValue)
+		_, isLeftFloat := leftValue.(*types.FloatValue)
+		if isLeftFloat || isRightFloat {
+			return types.NewFloat(value)
 		}
 		return types.NewInt(value)
 	}
@@ -390,7 +410,8 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 			return res[0].Interface()
 		}
 		return nil
-		// default:
+	default:
+		pp.Print(v)
 
 	}
 	return nil

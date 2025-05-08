@@ -24,6 +24,10 @@ const (
 	ObjectNode               NodeType = "ObjectNode"
 )
 
+var STDLIBS = []any{
+	"math",
+}
+
 type Statement struct {
 	Kind NodeType
 	Line int
@@ -41,6 +45,12 @@ type Module struct {
 	*Statement
 	Name string
 	Body []any
+	Path string
+}
+
+type StdModule struct {
+	*Statement
+	Name string
 	Path string
 }
 
@@ -81,6 +91,10 @@ type Caller struct {
 }
 
 type NumberLiteral struct {
+	*Statement
+	Value any
+}
+type FloatLiteral struct {
 	*Statement
 	Value any
 }
