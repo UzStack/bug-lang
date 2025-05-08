@@ -34,45 +34,45 @@ type Statement struct {
 }
 
 type Expression struct {
-	*Statement
+	Line int
 }
 
 type Program struct {
-	*Statement
 	Body []any
+	Line int
 }
 type Module struct {
-	*Statement
+	Line int
 	Name string
 	Body []any
 	Path string
 }
 
 type StdModule struct {
-	*Statement
+	Line int
 	Name string
 	Path string
 }
 
 type BinaryExpression struct {
-	*Statement
+	Line     int
 	Left     any
 	Right    any
 	Operator any
 }
 
 type IdentifierStatement struct {
-	*Statement
+	Line  int
 	Value any
 }
 
 type BaseStatement struct {
-	*Statement
+	Line int
 }
 
 // Call Statement
 type CallStatement struct {
-	*Statement
+	Line   int
 	Caller any
 	Value  any
 	Args   []any
@@ -80,85 +80,85 @@ type CallStatement struct {
 
 // Variable Declatation
 type VariableDeclaration struct {
-	*Statement
+	Line  int
 	Name  string
 	Value any
 }
 
 type Caller struct {
-	*Statement
+	Line int
 	Name string
 }
 
 type NumberLiteral struct {
-	*Statement
+	Line  int
 	Value any
 }
 type FloatLiteral struct {
-	*Statement
+	Line  int
 	Value any
 }
 
 type StringLiteral struct {
-	*Statement
+	Line  int
 	Value any
 }
 
 type FunctionDeclaration struct {
-	*Statement
+	Line   int
 	Name   string
 	Params []any
 	Body   []any
 }
 
 type IfStatement struct {
-	*Statement
+	Line      int
 	Condition any
 	Body      []any
 	Childs    []any
 }
 
 type ElseIfStatement struct {
-	*Statement
+	Line      int
 	Condition any
 	Body      []any
 }
 
 type ElseStatement struct {
-	*Statement
+	Line int
 	Body []any
 }
 
 type ForStatement struct {
-	*Statement
+	Line      int
 	Condition any
 	Body      []any
 }
 
 type AssignmentExpression struct {
-	*Statement
+	Line  int
 	Owner any
 	Value any
 }
 
 type ReturnStatement struct {
-	*Statement
+	Line  int
 	Value any
 }
 
 type ArrayExpression struct {
-	*Statement
+	Line   int
 	Values []any
 	Left   any
 }
 
 type MapExpression struct {
-	*Statement
+	Line   int
 	Values map[string]any
 }
 
 type MemberExpression struct {
-	*Statement
+	Line     int
 	Left     any
 	Prop     any
 	Computed bool
@@ -166,13 +166,13 @@ type MemberExpression struct {
 }
 
 type ClassDeclaration struct {
-	*Statement
+	Line    int
 	Name    any
 	Body    []any
 	Methods []*FunctionDeclaration
 }
 
 type ObjectExpression struct {
-	*Statement
+	Line   int
 	Caller any
 }
