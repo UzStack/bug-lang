@@ -1,5 +1,8 @@
-import "math";
+sum = 0;
+i = 0;
 
-a = -9.1212121;
-b = 10;
-
+for (i < 1000000){
+    sum = sum + i * 2;
+    i = i + 1;
+}
+print(sum);
