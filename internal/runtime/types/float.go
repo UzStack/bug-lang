@@ -1,10 +1,10 @@
 package types
 
 type FloatValue struct {
-	Value any
+	Value float64
 }
 
-func NewFloat(value any) Object {
+func NewFloat(value float64) Object {
 	return &FloatValue{
 		Value: value,
 	}

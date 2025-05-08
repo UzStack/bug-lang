@@ -14,6 +14,7 @@ import (
 var STDLIBS = map[string]map[string]any{
 	"math": {
 		"round": libs.Round,
+		"pow":   libs.Pow,
 	},
 }
 
@@ -34,6 +35,8 @@ func Pprint(values ...any) {
 		case *types.IntValue:
 			fmt.Print(v.GetValue())
 		case *types.FloatValue:
+			fmt.Print(v.GetValue())
+		case *types.BoolValue:
 			fmt.Print(v.GetValue())
 		case *types.ArrayValue:
 			fmt.Print("[")

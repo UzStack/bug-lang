@@ -13,14 +13,8 @@ func IsNumber(value string) bool {
 	re := regexp.MustCompile(`^[0-9]+$`)
 	return re.MatchString(value)
 }
-
-func IsSignedNumber(value string) bool {
-	re := regexp.MustCompile(`^-?[0-9]+$`)
-	return re.MatchString(value)
-}
-
 func IsSignedFloat(value string) bool {
-	re := regexp.MustCompile(`^-?[0-9]+(\.[0-9]*)?$`)
+	re := regexp.MustCompile(`^[0-9]+(\.[0-9]*)?$`)
 	return re.MatchString(value)
 }
 

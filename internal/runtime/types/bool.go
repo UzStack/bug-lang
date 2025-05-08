@@ -1,10 +1,10 @@
 package types
 
 type BoolValue struct {
-	Value any
+	Value bool
 }
 
-func NewBool(value any) Object {
+func NewBool(value bool) Object {
 	return &BoolValue{
 		Value: value,
 	}

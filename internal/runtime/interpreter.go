@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -22,11 +24,26 @@ func Init(ast any, env *enviroment.Enviroment) any {
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	switch node := astBody.(type) {
 	case *parser.NumberLiteral:
-		return types.NewInt(node.Value)
+		value, err := strconv.Atoi(node.Value.(string))
+		if err != nil {
+			fmt.Println("Type error: ", node.Value, "not integer")
+			os.Exit(1)
+		}
+		return types.NewInt(value)
 	case *parser.StringLiteral:
-		return types.NewString(node.Value)
+		value, err := node.Value.(string)
+		if !err {
+			fmt.Println("Type not string", value)
+			os.Exit(1)
+		}
+		return types.NewString(value)
 	case *parser.FloatLiteral:
-		return types.NewFloat(node.Value)
+		value, err := strconv.ParseFloat(node.Value.(string), 64)
+		if err != nil {
+			fmt.Println("Type error: ", node.Value, "not float")
+			os.Exit(1)
+		}
+		return types.NewFloat(value)
 	case *parser.Module:
 		return EvalModuleStatement(node, env)
 	case *parser.StdModule:
@@ -113,7 +130,7 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 			Kind: parser.FunctionDeclarationNode,
 		},
 		Body:   []any{},
-		Params: []*parser.IdentifierStatement{},
+		Params: []any{},
 	}, scope, obj)
 	for _, method := range methods {
 		EvalFunctionDeclaration(method, scope, obj)
@@ -310,8 +327,8 @@ func EvalProgram(node *parser.Program, env *enviroment.Enviroment) any {
 }
 
 func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Enviroment) any {
-	var value any
 	if utils.InArray(node.Operator, []any{"&&", "||"}) {
+		var value bool
 		left := Interpreter(node.Left, env).(types.Object).GetValue().(bool)
 		right := Interpreter(node.Right, env).(types.Object).GetValue().(bool)
 		switch node.Operator {
@@ -322,43 +339,58 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 		}
 		return types.NewBool(value)
 	} else {
-		rightValue := Interpreter(node.Right, env)
+		var left, right float64
 		leftValue := Interpreter(node.Left, env)
+		rightValue := Interpreter(node.Right, env)
 
-		left, _ := strconv.ParseFloat(leftValue.(types.Object).GetValue().(string), 64)
-		right, _ := strconv.ParseFloat(rightValue.(types.Object).GetValue().(string), 64)
+		if leftValue != 0 {
+			left, _ = utils.Int2Float(leftValue.(types.Object).GetValue())
+		}
+		if rightValue != 0 {
+			right, _ = utils.Int2Float(rightValue.(types.Object).GetValue())
+		}
+		if utils.InArray(node.Operator, []any{"+", "-", "*", "/"}) {
+			var value any
+			switch node.Operator {
+			case "+":
+				value = left + right
+			case "-":
+				value = left - right
+			case "*":
+				value = left * right
+			case "/":
+				value = left / right
+			case "%":
+				value = int(left) % int(right)
+			}
+			_, isRightFloat := rightValue.(*types.FloatValue)
+			_, isLeftFloat := leftValue.(*types.FloatValue)
+			if isLeftFloat || isRightFloat {
+				return types.NewFloat(value.(float64))
+			}
+			v, _ := utils.Float2Int(value)
+			return types.NewInt(v)
+		} else if utils.InArray(node.Operator, []any{"==", ">=", "<=", "!=", ">", "<"}) {
+			var value bool
+			switch node.Operator {
+			case "==":
+				value = left == right
+			case ">=":
+				value = left >= right
+			case "<=":
+				value = left <= right
+			case "!=":
+				value = left != right
+			case ">":
+				value = left > right
+			case "<":
+				value = left < right
+			}
+			return types.NewBool(value)
+		}
 
-		switch node.Operator {
-		case "+":
-			value = left + right
-		case "-":
-			value = left - right
-		case "*":
-			value = left * right
-		case "/":
-			value = left / right
-		case "%":
-			value = int(left) % int(right)
-		case "==":
-			value = left == right
-		case ">=":
-			value = left >= right
-		case "<=":
-			value = left <= right
-		case "!=":
-			value = left != right
-		case ">":
-			value = left > right
-		case "<":
-			value = left < right
-		}
-		_, isRightFloat := rightValue.(*types.FloatValue)
-		_, isLeftFloat := leftValue.(*types.FloatValue)
-		if isLeftFloat || isRightFloat {
-			return types.NewFloat(value)
-		}
-		return types.NewInt(value)
 	}
+	return nil
 }
 
 func IsReturn(result any) (bool, any) {
@@ -392,7 +424,7 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 		var result any
 		scope.DeclareVariable("this", v.OwnerObject, -1)
 		for index, name := range v.Params {
-			scope.DeclareVariable(name.Value.(string), Interpreter(node.Args[index], env), -1)
+			scope.DeclareVariable(name.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Args[index], env), -1)
 		}
 		for _, statement := range v.Body {
 			result = Interpreter(statement, scope)

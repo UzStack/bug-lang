@@ -8,7 +8,6 @@ import (
 
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/pkg/utils"
-	"github.com/k0kubun/pp"
 )
 
 type parser struct {
@@ -437,7 +436,7 @@ func (p *parser) ParsePrimaryExpression() any {
 	case lexar.Semicolon:
 		p.Next()
 	default:
-		pp.Print("default", p.At())
+		p.At()
 	}
 	return 0
 }
@@ -466,7 +465,7 @@ func (p *parser) ParseFnDeclaration() *FunctionDeclaration {
 	p.Next()
 	identifier := p.Except(lexar.Identifier, "Funcsiya nomi nato'g'ri")
 	args := p.ParseArgs()
-	var params []*IdentifierStatement
+	var params []any
 	for _, arg := range args {
 		param, ok := arg.(*IdentifierStatement)
 		if !ok {

@@ -1,10 +1,10 @@
 package types
 
 type IntValue struct {
-	Value any
+	Value int
 }
 
-func NewInt(value any) Object {
+func NewInt(value int) Object {
 	return &IntValue{
 		Value: value,
 	}

@@ -1,9 +1,5 @@
 package types
 
-import (
-	"github.com/UzStack/bug-lang/internal/parser"
-)
-
 type RuntimeTypes string
 
 const (
@@ -15,7 +11,7 @@ const (
 
 type FunctionDeclaration struct {
 	Name        any
-	Params      []*parser.IdentifierStatement
+	Params      []any
 	Body        []any
 	Type        RuntimeTypes
 	OwnerObject any

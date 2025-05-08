@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
+
+	"github.com/UzStack/bug-lang/internal/runtime/types"
 )
 
 func InArray(value any, arr []any) bool {
@@ -22,4 +25,34 @@ func Str2Int(value any) (int, error) {
 		return strconv.Atoi(val)
 	}
 	panic(fmt.Sprintf("Str2Int error: %s", value))
+}
+
+func Int2Float(value any) (float64, error) {
+	switch v := value.(type) {
+	case int:
+		return float64(v), nil
+	case float32:
+		return float64(v), nil
+	case float64:
+		return v, nil
+	case *types.IntValue:
+		return float64(v.Value), nil
+	case *types.FloatValue:
+		return float64(v.Value), nil
+	}
+	return -1, errors.New("value not integer")
+}
+
+func Float2Int(value any) (int, error) {
+	switch v := value.(type) {
+	case float64:
+		return int(v), nil
+	case int:
+		return v, nil
+	case float32:
+		return int(v), nil
+	case *types.FloatValue:
+		return int(v.Value), nil
+	}
+	return -1, errors.New("value not integer")
 }

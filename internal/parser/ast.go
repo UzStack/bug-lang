@@ -107,7 +107,7 @@ type StringLiteral struct {
 type FunctionDeclaration struct {
 	*Statement
 	Name   string
-	Params []*IdentifierStatement
+	Params []any
 	Body   []any
 }
 
