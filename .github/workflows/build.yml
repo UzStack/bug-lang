@@ -22,13 +22,28 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Build the project
+      - name: Build buglang binary
         run: |
-          GOOS=${{ matrix.os == 'macos' && 'darwin' || matrix.os == 'windows' && 'windows' || 'linux' }} GOARCH=amd64 go build -o buglang-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/main.go
+          GOOS=${{ matrix.os == 'macos' && 'darwin' || matrix.os == 'windows' && 'windows' || 'linux' }} \
+          GOARCH=amd64 \
+          go build -o buglang-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/main.go
 
-      - name: Upload release asset
+      - name: Build fpm binary
+        run: |
+          GOOS=${{ matrix.os == 'macos' && 'darwin' || matrix.os == 'windows' && 'windows' || 'linux' }} \
+          GOARCH=amd64 \
+          go build -o fpm-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/fpm/main.go
+
+      - name: Upload buglang binary to release
         uses: softprops/action-gh-release@v1
         with:
           files: buglang-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+
+      - name: Upload fpm binary to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: fpm-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
