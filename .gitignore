@@ -9,6 +9,7 @@
 *.dylib
 cpu.prof
 test.json
+main.py
 
 # Test binary, built with `go test -c`
 *.test

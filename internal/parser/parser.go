@@ -52,10 +52,7 @@ func (p *parser) ParseAssignmentExpression() any {
 	if p.At().Type == lexar.Equals {
 		p.Next()
 		return &AssignmentExpression{
-			Statement: &Statement{
-				Line: p.At().Line,
-				Kind: AssignmentExpressionNode,
-			},
+			Line:  p.At().Line,
 			Owner: left,
 			Value: p.ParseAssignmentExpression(),
 		}
@@ -76,10 +73,7 @@ func (p *parser) ParseNewObjectExpression() any {
 func (p *parser) ParseReturnStatement() any {
 	p.Next()
 	return &ReturnStatement{
-		Statement: &Statement{
-			Kind: ReturnNode,
-			Line: p.At().Line,
-		},
+		Line:  p.At().Line,
 		Value: p.ParseAssignmentExpression(),
 	}
 }
@@ -98,10 +92,7 @@ func (p *parser) ParseIfStatement() any {
 		chields = append(chields, p.ParseElseStatement())
 	}
 	return &IfStatement{
-		Statement: &Statement{
-			Kind: IfStatementNode,
-			Line: p.At().Line,
-		},
+		Line:      p.At().Line,
 		Condition: condition,
 		Body:      body,
 		Childs:    chields,
@@ -115,10 +106,7 @@ func (p *parser) ParseElseIfStatement() any {
 	p.Except(lexar.CloseParen, "Except close paren IF Statement")
 	body := p.ParseBody()
 	return &ElseIfStatement{
-		Statement: &Statement{
-			Kind: ElseIfStatementNode,
-			Line: p.At().Line,
-		},
+		Line:      p.At().Line,
 		Condition: condition,
 		Body:      body,
 	}
@@ -128,10 +116,7 @@ func (p *parser) ParseElseStatement() any {
 	p.Next()
 	body := p.ParseBody()
 	return &ElseStatement{
-		Statement: &Statement{
-			Kind: ElseStatementNode,
-			Line: p.At().Line,
-		},
+		Line: p.At().Line,
 		Body: body,
 	}
 }
@@ -141,10 +126,7 @@ func (p *parser) ParseMapExpression() any {
 		return p.ParseLogicalExpression()
 	}
 	return &MapExpression{
-		Statement: &Statement{
-			Line: p.At().Line,
-			Kind: MapNode,
-		},
+		Line:   p.At().Line,
 		Values: p.ParseMapItems(),
 	}
 }
@@ -173,10 +155,7 @@ func (p *parser) ParseArrayExpression() any {
 		return p.ParseMapExpression()
 	}
 	return &ArrayExpression{
-		Statement: &Statement{
-			Line: p.At().Line,
-			Kind: ArrayNode,
-		},
+		Line:   p.At().Line,
 		Values: p.ParseArrayItems(),
 	}
 }
@@ -209,10 +188,7 @@ func (p *parser) ParseLogicalExpression() any {
 		right := p.ParseRelationalExpression()
 
 		left = &BinaryExpression{
-			Statement: &Statement{
-				Kind: BinaryOperatorNode,
-				Line: p.At().Line,
-			},
+			Line:     p.At().Line,
 			Right:    right,
 			Left:     left,
 			Operator: operator,
@@ -229,10 +205,7 @@ func (p *parser) ParseRelationalExpression() any {
 		right := p.ParseAdditiveExpression()
 
 		left = &BinaryExpression{
-			Statement: &Statement{
-				Kind: BinaryOperatorNode,
-				Line: p.At().Line,
-			},
+			Line:     p.At().Line,
 			Right:    right,
 			Left:     left,
 			Operator: operator,
@@ -249,10 +222,7 @@ func (p *parser) ParseAdditiveExpression() any {
 		operator := p.Next().Value
 		right := p.ParseMultiplicativeExpression()
 		left = &BinaryExpression{
-			Statement: &Statement{
-				Kind: BinaryOperatorNode,
-				Line: p.At().Line,
-			},
+			Line:     p.At().Line,
 			Left:     left,
 			Right:    right,
 			Operator: operator,
@@ -268,10 +238,7 @@ func (p *parser) ParseMultiplicativeExpression() any {
 		operator := p.Next().Value
 		right := p.ParseCallMemberExpression()
 		left = &BinaryExpression{
-			Statement: &Statement{
-				Kind: BinaryOperatorNode,
-				Line: p.At().Line,
-			},
+			Line:     p.At().Line,
 			Left:     left,
 			Right:    right,
 			Operator: operator,
@@ -315,10 +282,7 @@ func (p *parser) ParseVariableDeclaration() any {
 		panic(fmt.Sprintf("Error: %d", p.Index))
 	}
 	declatation := &VariableDeclaration{
-		Statement: &Statement{
-			Kind: VariableDeclarationNode,
-			Line: p.At().Line,
-		},
+		Line:  p.At().Line,
 		Name:  value,
 		Value: p.ParseAssignmentExpression(),
 	}
@@ -334,10 +298,7 @@ func (p *parser) ParseForStatement() any {
 	condition := p.ParseLogicalExpression()
 	p.Except(lexar.CloseParen, "Except close paren FOR")
 	return &ForStatement{
-		Statement: &Statement{
-			Kind: ForNode,
-			Line: p.At().Line,
-		},
+		Line:      p.At().Line,
 		Condition: condition,
 		Body:      p.ParseBody(),
 	}
@@ -367,10 +328,7 @@ func (p *parser) ParseMemberExpression() any {
 	for p.At().Type == lexar.OpenBracket {
 		p.Next()
 		left = &MemberExpression{
-			Statement: &Statement{
-				Line: p.At().Line,
-				Kind: MemberNode,
-			},
+			Line:     p.At().Line,
 			Left:     left,
 			Prop:     p.ParseAssignmentExpression(),
 			Computed: true,
@@ -380,10 +338,7 @@ func (p *parser) ParseMemberExpression() any {
 	for p.At().Type == lexar.Dot {
 		p.Next()
 		left = &MemberExpression{
-			Statement: &Statement{
-				Line: p.At().Line,
-				Kind: MemberNode,
-			},
+			Line:     p.At().Line,
 			Left:     left,
 			Prop:     p.ParsePrimaryExpression(),
 			Computed: false,
@@ -394,10 +349,7 @@ func (p *parser) ParseMemberExpression() any {
 
 func (p *parser) ParseCallExpression(caller any) any {
 	return &CallStatement{
-		Statement: &Statement{
-			Line: p.At().Line,
-			Kind: CallStatementNode,
-		},
+		Line:   p.At().Line,
 		Caller: caller,
 		Args:   p.ParseArgs(),
 	}
@@ -407,10 +359,7 @@ func (p *parser) ParsePrimaryExpression() any {
 	switch p.At().Type {
 	case lexar.Number:
 		return &NumberLiteral{
-			Statement: &Statement{
-				Kind: NumberLiteralNode,
-				Line: p.At().Line,
-			},
+			Line:  p.At().Line,
 			Value: p.Next().Value,
 		}
 	case lexar.Float:
@@ -419,18 +368,12 @@ func (p *parser) ParsePrimaryExpression() any {
 		}
 	case lexar.String:
 		return &StringLiteral{
-			Statement: &Statement{
-				Kind: NumberLiteralNode,
-				Line: p.At().Line,
-			},
+			Line:  p.At().Line,
 			Value: p.Next().Value,
 		}
 	case lexar.Identifier:
 		return &IdentifierStatement{
-			Statement: &Statement{
-				Kind: IdentifierNode,
-				Line: p.At().Line,
-			},
+			Line:  p.At().Line,
 			Value: p.Next().Value,
 		}
 	case lexar.Semicolon:
@@ -453,9 +396,7 @@ func (p *parser) ParseClassStatement() any {
 	p.Except(lexar.CloseBrace, "Except close brace class")
 
 	return &ClassDeclaration{
-		Statement: &Statement{
-			Line: p.At().Line,
-		},
+		Line:    p.At().Line,
 		Methods: methods,
 		Name:    identifier,
 	}
@@ -474,10 +415,7 @@ func (p *parser) ParseFnDeclaration() *FunctionDeclaration {
 		params = append(params, param)
 	}
 	return &FunctionDeclaration{
-		Statement: &Statement{
-			Kind: FunctionDeclarationNode,
-			Line: p.At().Line,
-		},
+		Line:   p.At().Line,
 		Name:   identifier.Value.(string),
 		Params: params,
 		Body:   p.ParseBody(),
@@ -498,9 +436,7 @@ func (p *parser) ParseImportStatement() any {
 	}
 	if utils.InArray(module, STDLIBS) {
 		return &StdModule{
-			Statement: &Statement{
-				Line: p.At().Line,
-			},
+			Line: p.At().Line,
 			Name: name,
 			Path: module,
 		}
@@ -513,10 +449,7 @@ func (p *parser) ParseImportStatement() any {
 	tokens := tokenizer.Tokenize(string(code))
 	parser := NewParser(tokens)
 	program := &Module{
-		Statement: &Statement{
-			Kind: ProgramNode,
-			Line: -1,
-		},
+		Line: p.At().Line,
 		Name: name,
 		Path: path,
 		Body: []any{},
@@ -551,10 +484,7 @@ func (p *parser) ParseStatement() any {
 
 func (p *parser) CreateAST() any {
 	program := &Program{
-		Statement: &Statement{
-			Kind: ProgramNode,
-			Line: -1,
-		},
+		Line: p.At().Line,
 		Body: []any{},
 	}
 	for p.IsEOF() {

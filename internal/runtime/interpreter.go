@@ -124,11 +124,8 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 	scope := enviroment.NewEnv(env)
 	obj := types.NewObject(className, scope)
 	EvalFunctionDeclaration(&parser.FunctionDeclaration{
-		Name: "init",
-		Statement: &parser.Statement{
-			Line: -1,
-			Kind: parser.FunctionDeclarationNode,
-		},
+		Name:   "init",
+		Line:   -1,
 		Body:   []any{},
 		Params: []any{},
 	}, scope, obj)
@@ -226,14 +223,18 @@ func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment
 		t.Assign = Interpreter(node.Value, env)
 		Interpreter(t, env)
 	default:
-		env.AssignmenVariable(node.Owner.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Value, env), node.Statement.Line)
+		env.AssignmenVariable(node.Owner.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Value, env), node.Line)
 	}
 	return nil
 }
 
 func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any {
 	// scope := enviroment.NewEnv(env) NOTE: for uchun scope yaratilsa condition xato ishlamoqda to'g'irlash kerak
-	for Interpreter(node.Condition, env).(types.Object).GetValue().(bool) {
+	for {
+		condition := Interpreter(node.Condition, env).(types.Object).GetValue().(bool)
+		if !condition {
+			break
+		}
 		for _, statement := range node.Body {
 			result := Interpreter(statement, env)
 			if isReturn, response := IsReturn(result); isReturn {
@@ -315,7 +316,7 @@ func EvalFunctionDeclaration(node *parser.FunctionDeclaration, env *enviroment.E
 		Params:      node.Params,
 		OwnerObject: ownerObject,
 	}
-	return env.AssignmenVariable(node.Name, fn, node.Statement.Line)
+	return env.AssignmenVariable(node.Name, fn, node.Line)
 }
 
 func EvalProgram(node *parser.Program, env *enviroment.Enviroment) any {
