@@ -3,13 +3,11 @@ package main
 import (
 	"os"
 	"runtime/pprof"
-	"time"
 
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/internal/parser"
 	"github.com/UzStack/bug-lang/internal/runtime"
 	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
-	"github.com/k0kubun/pp/v3"
 )
 
 func main() {
@@ -32,14 +30,10 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	start := time.Now()
 	tokenize := lexar.NewTokenize()
 	tokens := tokenize.Tokenize(string(code))
-	pp.Println(time.Since(start).Milliseconds())
 	parser := parser.NewParser(tokens)
 	ast := parser.CreateAST()
-	pp.Println(time.Since(start).Milliseconds())
 	env := enviroment.NewGlobalEnv()
 	runtime.Init(ast, env)
-	pp.Println(time.Since(start).Milliseconds())
 }
