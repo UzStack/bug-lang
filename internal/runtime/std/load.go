@@ -14,6 +14,10 @@ func Load(env *enviroment.Enviroment) {
 		Type: "native-function",
 		Call: Input,
 	}, -1)
+	env.DeclareVariable("header", &types.NativeFunctionDeclaration{
+		Type: "native-function",
+		Call: Header,
+	}, -1)
 	env.DeclareVariable("true", types.NewBool(true), -1)
 	env.DeclareVariable("false", types.NewBool(false), -1)
 	env.DeclareVariable("null", types.NewNull(nil), -1)

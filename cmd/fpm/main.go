@@ -18,14 +18,26 @@ import (
 
 type Job struct {
 	File     string
-	Response chan string
+	Response chan Result
+}
+
+type Result struct {
+	Body    string
+	Headers []Header
+}
+
+type Header struct {
+	Key   string
+	Value string
 }
 
 func Worker(jobs <-chan Job) {
 	for job := range jobs {
 		code, err := os.ReadFile(job.File)
 		if err != nil {
-			job.Response <- fmt.Sprintf("Error reading file %s: %v", job.File, err)
+			job.Response <- Result{
+				Body: fmt.Sprintf("Error reading file %s: %v", job.File, err),
+			}
 			continue
 		}
 		tokenize := lexar.NewTokenize()
@@ -35,13 +47,25 @@ func Worker(jobs <-chan Job) {
 		env := enviroment.NewGlobalEnv()
 		std.Load(env)
 		var buf bytes.Buffer
+		var headers []Header
 		env.AssignmenVariable("print", &types.NativeFunctionDeclaration{
 			Call: func(values ...any) {
 				std.Pprint(&buf, values)
 			},
 		}, -1)
+		env.AssignmenVariable("header", &types.NativeFunctionDeclaration{
+			Call: func(key any, value any) {
+				headers = append(headers, Header{
+					Key:   key.(*types.StringValue).Value,
+					Value: value.(*types.StringValue).Value,
+				})
+			},
+		}, -1)
 		runtime.Interpreter(ast, env)
-		job.Response <- buf.String()
+		job.Response <- Result{
+			Body:    buf.String(),
+			Headers: headers,
+		}
 		close(job.Response)
 	}
 }
@@ -50,10 +74,14 @@ func Worker(jobs <-chan Job) {
 func handler(w http.ResponseWriter, r *http.Request, jobs chan<- Job) {
 	params := fcgi.ProcessEnv(r)
 	file := params["DOCUMENT_ROOT"] + params["DOCUMENT_URI"]
-	result := make(chan string)
+	result := make(chan Result)
 	// Faylni workerga yuborish
 	jobs <- Job{File: file, Response: result}
-	fmt.Fprint(w, <-result)
+	res := <-result
+	for _, header := range res.Headers {
+		w.Header().Set(header.Key, header.Value)
+	}
+	w.Write([]byte(res.Body))
 }
 
 func main() {

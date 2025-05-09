@@ -28,6 +28,10 @@ func QuotationMark(value any) bool {
 	}
 }
 
+func Header(key any, value any) {
+	// Not implement
+}
+
 func Pprint(buf *bytes.Buffer, values ...any) {
 	for _, val := range values {
 		switch v := val.(type) {
