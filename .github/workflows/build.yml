@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu, windows, macos]
         go-version: [1.24.3]
 
     steps:
@@ -24,11 +24,11 @@ jobs:
 
       - name: Build the project
         run: |
-          GOOS=${{ matrix.os == 'macos-latest' && 'darwin' || matrix.os == 'windows-latest' && 'windows' || 'linux' }} GOARCH=amd64 go build -o buglang-${{ matrix.os }} ./cmd/main.go
+          GOOS=${{ matrix.os == 'macos' && 'darwin' || matrix.os == 'windows' && 'windows' || 'linux' }} GOARCH=amd64 go build -o buglang-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }} ./cmd/main.go
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v1
         with:
-          files: buglang-${{ matrix.os }}
+          files: buglang-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
