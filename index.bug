@@ -1,0 +1,14 @@
+users = [];
+
+i = 0;
+
+for (i <= 100){
+    users.add({
+        "id": 1,
+        "name": i,
+        "age": i * 2,
+    });
+    i = i + 1;
+}
+
+print(users);

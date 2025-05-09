@@ -2,6 +2,7 @@ package std
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"reflect"
@@ -27,59 +28,61 @@ func QuotationMark(value any) bool {
 	}
 }
 
-func Pprint(values ...any) {
+func Pprint(buf *bytes.Buffer, values ...any) {
 	for _, val := range values {
 		switch v := val.(type) {
 		case *types.StringValue:
-			fmt.Print(v.GetValue())
+			fmt.Fprint(buf, v.GetValue())
 		case *types.IntValue:
-			fmt.Print(v.GetValue())
+			fmt.Fprint(buf, v.GetValue())
 		case *types.FloatValue:
-			fmt.Print(v.GetValue())
+			fmt.Fprint(buf, v.GetValue())
 		case *types.BoolValue:
-			fmt.Print(v.GetValue())
+			fmt.Fprint(buf, v.GetValue())
 		case *types.ArrayValue:
-			fmt.Print("[")
+			fmt.Fprint(buf, "[")
 			for index, el := range v.Values {
-				Pprint(el)
+				Pprint(buf, el)
 				if index < len(v.Values)-1 {
-					fmt.Print(",")
+					fmt.Fprint(buf, ",")
 				}
 			}
-			fmt.Print("]")
+			fmt.Fprint(buf, "]")
 		case *types.MapValue:
-			fmt.Print("{")
+			fmt.Fprint(buf, "{")
 			i := 0
 			values := v.GetValue().(map[string]any)
 			size := len(values)
 			for key, value := range values {
 				i++
-				fmt.Print("\"", key, "\"", ":")
+				fmt.Fprint(buf, "\"", key, "\"", ":")
 				isQuotationMark := QuotationMark(value)
 				if isQuotationMark {
-					fmt.Print("\"")
+					fmt.Fprint(buf, "\"")
 				}
-				Pprint(value)
+				Pprint(buf, value)
 				if isQuotationMark {
-					fmt.Print("\"")
+					fmt.Fprint(buf, "\"")
 				}
 				if size != i {
-					fmt.Print(",")
+					fmt.Fprint(buf, ",")
 				}
 			}
-			fmt.Print("}")
+			fmt.Fprint(buf, "}")
 		default:
 			refValue := reflect.ValueOf(val)
 			if refValue.Kind() == reflect.Slice {
 				for i := 0; i < refValue.Len(); i++ {
-					Print(refValue.Index(i).Interface())
+					Pprint(buf, refValue.Index(i).Interface())
 				}
 			}
 		}
 	}
 }
 func Print(values ...any) {
-	Pprint(values...)
+	var buf bytes.Buffer
+	Pprint(&buf, values...)
+	fmt.Print(buf.String())
 	fmt.Print("\t\n")
 }
 

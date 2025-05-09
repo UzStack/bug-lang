@@ -8,6 +8,7 @@ import (
 	"github.com/UzStack/bug-lang/internal/parser"
 	"github.com/UzStack/bug-lang/internal/runtime"
 	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
+	"github.com/UzStack/bug-lang/internal/runtime/std"
 )
 
 func main() {
@@ -35,5 +36,6 @@ func main() {
 	parser := parser.NewParser(tokens)
 	ast := parser.CreateAST()
 	env := enviroment.NewGlobalEnv()
-	runtime.Init(ast, env)
+	std.Load(env)
+	runtime.Interpreter(ast, env)
 }

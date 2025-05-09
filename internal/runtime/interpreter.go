@@ -16,11 +16,6 @@ import (
 	"github.com/k0kubun/pp/v3"
 )
 
-func Init(ast any, env *enviroment.Enviroment) any {
-	std.Load(env)
-	return Interpreter(ast, env)
-}
-
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	switch node := astBody.(type) {
 	case *parser.NumberLiteral:
