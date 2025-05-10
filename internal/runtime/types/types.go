@@ -1,5 +1,7 @@
 package types
 
+import "github.com/UzStack/bug-lang/internal/runtime/enviroment"
+
 type RuntimeTypes string
 
 const (
@@ -15,6 +17,7 @@ type FunctionDeclaration struct {
 	Body        []any
 	Type        RuntimeTypes
 	OwnerObject any
+	Enviroment  *enviroment.Enviroment
 }
 
 type NativeFunctionDeclaration struct {

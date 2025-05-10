@@ -1,4 +1,4 @@
 import "psql";
 
 db = new psql.DB("db");
-db.query("select * from users");
+print(db.query("select * from users"));

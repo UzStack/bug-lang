@@ -89,7 +89,7 @@ func EvalStdModuleStatement(node *parser.StdModule, env *enviroment.Enviroment) 
 	return nil
 }
 func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) any {
-	scope := enviroment.NewGlobalEnv()
+	scope := enviroment.NewEnv(nil)
 	std.Load(scope)
 	var lastResult any
 	if module := enviroment.Modules.Get(node.Path); module != nil {
@@ -98,8 +98,8 @@ func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) any {
 	for _, stmt := range node.Body {
 		lastResult = Interpreter(stmt, scope)
 	}
-	env.DeclareVariable(node.Name, scope.Variables, -1)
-	enviroment.Modules.Add(node.Path, scope.Variables)
+	env.DeclareVariable(node.Name, types.NewModule(scope), -1)
+	enviroment.Modules.Add(node.Path, types.NewModule(scope))
 	return lastResult
 }
 
@@ -115,6 +115,7 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 	case *parser.MemberExpression:
 		className = t.Prop.(*parser.IdentifierStatement).Value.(string)
 		methods = Interpreter(t, env).(*parser.ClassDeclaration).Methods
+		env = Interpreter(t.Left, env).(*types.ModuleValue).Enviroment
 	}
 	scope := enviroment.NewEnv(env)
 	obj := types.NewObject(className, scope)
@@ -127,7 +128,6 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 	for _, method := range methods {
 		EvalFunctionDeclaration(method, scope, obj)
 	}
-
 	EvalCallStatement(&parser.CallStatement{
 		Caller: &parser.IdentifierStatement{
 			Value: "init",
@@ -202,6 +202,8 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 			return t.Enviroment.GetVariable(prop, -1)
 		case *types.StdLibValue:
 			return reflect.ValueOf(t.Lib[prop])
+		case *types.ModuleValue:
+			return t.Enviroment.GetVariable(prop, -1)
 		case types.Object:
 			v := reflect.ValueOf(left)
 			return v.MethodByName(string(strings.ToUpper(prop[:1]) + prop[1:]))
@@ -310,6 +312,7 @@ func EvalFunctionDeclaration(node *parser.FunctionDeclaration, env *enviroment.E
 		Body:        node.Body,
 		Params:      node.Params,
 		OwnerObject: ownerObject,
+		Enviroment:  env,
 	}
 	return env.AssignmenVariable(node.Name, fn, node.Line)
 }
@@ -418,7 +421,8 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 		return results
 	case *types.FunctionDeclaration:
 		var result any
-		scope.DeclareVariable("this", v.OwnerObject, -1)
+		scope = v.Enviroment
+		scope.AssignmenVariable("this", v.OwnerObject, -1)
 		for index, name := range v.Params {
 			scope.DeclareVariable(name.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Args[index], env), -1)
 		}
