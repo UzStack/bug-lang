@@ -1,4 +1,15 @@
-import "psql";
 
-db = new psql.DB("db");
-print(db.query("select * from users"));
+class A(){
+    func init(){
+        this.first_name = "Samandar";
+    }
+}
+
+class B(A){
+    func test(){
+        print(this.first_name);
+    }
+}
+
+a = new B();
+a.test();

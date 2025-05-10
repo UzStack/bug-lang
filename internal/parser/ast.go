@@ -171,6 +171,7 @@ type ClassDeclaration struct {
 	Name    any
 	Body    []any
 	Methods []*FunctionDeclaration
+	Extends []any
 }
 
 type ObjectExpression struct {

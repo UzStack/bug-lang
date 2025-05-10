@@ -388,8 +388,7 @@ func (p *parser) ParseClassStatement() any {
 	p.Next()
 	var methods []*FunctionDeclaration
 	identifier := p.Except(lexar.Identifier, "Except Identifier Class")
-	p.Except(lexar.OpenParen, "Except open paren class")
-	p.Except(lexar.CloseParen, "Except close paren class")
+	args := p.ParseArgs()
 	p.Except(lexar.OpenBrace, "Except open brace class")
 	for p.At().Type != lexar.CloseBrace {
 		methods = append(methods, p.ParseFnDeclaration())
@@ -400,6 +399,7 @@ func (p *parser) ParseClassStatement() any {
 		Line:    p.At().Line,
 		Methods: methods,
 		Name:    identifier,
+		Extends: args,
 	}
 }
 

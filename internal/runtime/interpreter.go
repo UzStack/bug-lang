@@ -107,14 +107,16 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 	caller := node.Caller.(*parser.CallStatement)
 	var methods []*parser.FunctionDeclaration
 	var className string
-
+	var class *parser.ClassDeclaration
 	switch t := caller.Caller.(type) {
 	case *parser.IdentifierStatement:
 		className = t.Value.(string)
-		methods = env.GetVariable(className, -1).(*parser.ClassDeclaration).Methods
+		class = env.GetVariable(className, -1).(*parser.ClassDeclaration)
+		methods = class.Methods
 	case *parser.MemberExpression:
 		className = t.Prop.(*parser.IdentifierStatement).Value.(string)
-		methods = Interpreter(t, env).(*parser.ClassDeclaration).Methods
+		class = Interpreter(t, env).(*parser.ClassDeclaration)
+		methods = class.Methods
 		env = Interpreter(t.Left, env).(*types.ModuleValue).Enviroment
 	}
 	scope := enviroment.NewEnv(env)
@@ -125,6 +127,12 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 		Body:   []any{},
 		Params: []any{},
 	}, scope, obj)
+
+	for _, extend := range class.Extends {
+		for _, method := range Interpreter(extend, env).(*parser.ClassDeclaration).Methods {
+			EvalFunctionDeclaration(method, scope, obj)
+		}
+	}
 	for _, method := range methods {
 		EvalFunctionDeclaration(method, scope, obj)
 	}
