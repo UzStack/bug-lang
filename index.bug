@@ -1,28 +1,4 @@
-header("Content-Type", "application/json");
+import "psql";
 
-
-class User(){
-
-    func init(first_name, last_name, age){
-        this.first_name = first_name;
-        this.last_name = last_name;
-        this.age = age;
-    }
-
-    func hello(){
-        return {
-            "id": 1,
-            "age": this.age,
-            "first_name": this.first_name,
-            "last_name": this.last_name,
-        };
-    }
-}
-users = [];
-i = 0;
-for (i < 100){
-    user = new User("Azamov", "Samandar", 20);
-    users.add(user.hello());
-    i = i + 1;
-}
-print(users);
+db = new psql.DB("db");
+db.query("select * from users");

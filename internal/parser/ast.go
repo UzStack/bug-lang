@@ -26,6 +26,7 @@ const (
 
 var STDLIBS = []any{
 	"math",
+	"pgsql",
 }
 
 type Statement struct {

@@ -1,0 +1,11 @@
+import "pgsql";
+
+class DB(){
+    func init(db){
+        this.conn = pgsql.connect();
+    }
+
+    func query(sql){
+        return pgsql.query(this.conn, sql);
+    }
+}

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/UzStack/bug-lang/assets"
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/pkg/utils"
 )
@@ -426,7 +427,7 @@ func (p *parser) ParseImportStatement() any {
 	p.Next()
 	var name string
 	module := p.ParseAssignmentExpression().(*StringLiteral).Value.(string)
-	path := strings.Replace(module, ".", "/", -1) + ".bug"
+	path := strings.Replace(module, ".", "/", -1)
 	nameSegments := strings.Split(module, ".")
 	if p.At().Type == lexar.As {
 		p.Next()
@@ -441,12 +442,42 @@ func (p *parser) ParseImportStatement() any {
 			Path: module,
 		}
 	}
-	tokenizer := lexar.NewTokenize()
-	code, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
+	readCode := func(path string) []byte {
+		readFile := func(filePath string) ([]byte, error) {
+			data, err := assets.LibsFS.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			return data, nil
+		}
+		if !utils.FileExists(path+".bug") && !utils.IsDirectory(path) {
+			packagePath := "./packages/" + path
+			if utils.FileExists(packagePath) {
+				path = packagePath
+			}
+			data, err := readFile("libs/" + path + ".bug")
+			if err == nil {
+				return data
+			}
+			if _, err := assets.LibsFS.ReadDir("libs/" + path); err == nil {
+				data, err := readFile("libs/" + path + "/init.bug")
+				if err == nil {
+					return data
+				}
+			}
+		}
+		if utils.IsDirectory(path) {
+			path = path + "/init"
+		}
+		code, err := os.ReadFile(path + ".bug")
+		if err != nil {
+			panic("Error reading code: " + err.Error())
+		}
+
+		return code
 	}
-	tokens := tokenizer.Tokenize(string(code))
+	tokenizer := lexar.NewTokenize()
+	tokens := tokenizer.Tokenize(string(readCode(path)))
 	parser := NewParser(tokens)
 	program := &Module{
 		Line: p.At().Line,

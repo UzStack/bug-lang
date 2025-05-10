@@ -1,9 +1,0 @@
-
-class Test(){
-    func name(){
-        print("Test");
-        return "Samandar";
-    }
-}
-
-var test = new Test();

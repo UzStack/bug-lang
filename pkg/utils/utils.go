@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/UzStack/bug-lang/internal/runtime/types"
@@ -55,4 +56,17 @@ func Float2Int(value any) (int, error) {
 		return int(v.Value), nil
 	}
 	return -1, errors.New("value not integer")
+}
+
+func FileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil || !os.IsNotExist(err)
+}
+
+func IsDirectory(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
 }
