@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"strconv"
@@ -128,9 +127,8 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 		className = t.Prop.(*parser.IdentifierStatement).Value.(string)
 		class = Interpreter(t, env).(*parser.ClassDeclaration)
 		methods = class.Methods
-		env = Interpreter(t.Left, env).(*types.ModuleValue).Enviroment
 	}
-	scope := enviroment.NewEnv(env)
+	scope := enviroment.NewEnv(class.Enviroment)
 	obj := types.NewObject(className, scope)
 	EvalFunctionDeclaration(&parser.FunctionDeclaration{
 		Name:   "init",
@@ -154,6 +152,7 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 }
 
 func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
+	node.Enviroment = env
 	env.DeclareVariable(node.Name.(*lexar.Token).Value.(string), node, node.Line)
 	return nil
 }
@@ -218,8 +217,6 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 		case *types.StdLibValue:
 			return reflect.ValueOf(t.Lib[prop])
 		case *types.ModuleValue:
-			pp.Print(t.Enviroment.Variables)
-			log.Fatal()
 			return t.Enviroment.GetVariable(prop, -1)
 		case types.Object:
 			v := reflect.ValueOf(left)
@@ -441,6 +438,11 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 		var result any
 		scope = v.Enviroment
 		scope.AssignmenVariable("this", v.OwnerObject, -1)
+		scope.AssignmenVariable("super", &types.NativeFunctionDeclaration{
+			Call: func(values any) {
+				pp.Print(env)
+			},
+		}, -1)
 		for index, name := range v.Params {
 			scope.DeclareVariable(name.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Args[index], env), -1)
 		}

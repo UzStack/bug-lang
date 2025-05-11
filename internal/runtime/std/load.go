@@ -19,10 +19,6 @@ func Load(env *enviroment.Enviroment) {
 		Type: "native-function",
 		Call: Input,
 	}, -1)
-	env.DeclareVariable("super", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: Super,
-	}, -1)
 	env.DeclareVariable("header", &types.NativeFunctionDeclaration{
 		Type: "native-function",
 		Call: Header,

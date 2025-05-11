@@ -1,5 +1,7 @@
 package parser
 
+import "github.com/UzStack/bug-lang/internal/runtime/enviroment"
+
 type NodeType string
 
 const (
@@ -167,11 +169,12 @@ type MemberExpression struct {
 }
 
 type ClassDeclaration struct {
-	Line    int
-	Name    any
-	Body    []any
-	Methods []*FunctionDeclaration
-	Extends []any
+	Line       int
+	Name       any
+	Body       []any
+	Methods    []*FunctionDeclaration
+	Extends    []any
+	Enviroment *enviroment.Enviroment
 }
 
 type ObjectExpression struct {
