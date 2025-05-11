@@ -1,5 +1,3 @@
-import "test";
-
 class User(){
     func init(first_name, last_name, age){
         this.first_name = first_name;
@@ -9,10 +7,7 @@ class User(){
     }
     func hello(){
         print("FirstName: ", this.first_name);
-        print("LastName", this.last_name);
+        print("LastName: ", this.last_name);
         print("Age: ", this.age);
     }
 }
-
-var user = new User("Azamov", "Samandar", 20);
-test.test.name();

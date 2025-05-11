@@ -201,7 +201,7 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 	} else if node.Assign != nil {
 		left := Interpreter(node.Left, env).(*types.ObjectValue)
 		name := node.Prop.(*parser.IdentifierStatement).Value.(string)
-		return left.Enviroment.DeclareVariable(name, node.Assign, -1)
+		return left.Enviroment.AssignmenVariable(name, node.Assign, -1)
 	} else {
 		left := Interpreter(node.Left, env)
 		prop := node.Prop.(*parser.IdentifierStatement).Value.(string)

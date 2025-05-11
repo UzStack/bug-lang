@@ -1,15 +1,11 @@
+import "user" as u;
 
-class A(){
-    func init(){
-        this.first_name = "Samandar";
-    }
-}
 
-class B(A){
-    func test(){
+class U(u.User){
+    func f(){
         print(this.first_name);
     }
-}
 
-a = new B();
-a.test();
+}
+user = new U("Azamov", "Samandar", 20);
+user.f();
