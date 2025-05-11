@@ -5,6 +5,7 @@ import "github.com/UzStack/bug-lang/internal/runtime/enviroment"
 type ObjectValue struct {
 	Name       string
 	Enviroment *enviroment.Enviroment
+	Extends    map[string]*enviroment.Enviroment
 }
 
 func NewObject(name string, env *enviroment.Enviroment) Object {

@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/internal/parser"
 	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
 	"github.com/UzStack/bug-lang/internal/runtime/std"
@@ -102,15 +101,21 @@ func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) any {
 	return lastResult
 }
 
-func DeclareExtends(class *parser.ClassDeclaration, env *enviroment.Enviroment, scope *enviroment.Enviroment, obj types.Object) any {
+func DeclareExtends(class *parser.ClassDeclaration, env *enviroment.Enviroment, scope *enviroment.Enviroment, obj types.Object) map[string]*enviroment.Enviroment {
+	envs := make(map[string]*enviroment.Enviroment)
 	for _, extend := range class.Extends {
+		extScope := enviroment.NewEnv(scope)
 		exd := Interpreter(extend, env).(*parser.ClassDeclaration)
 		DeclareExtends(exd, env, scope, obj)
 		for _, method := range exd.Methods {
-			EvalFunctionDeclaration(method, scope, obj)
+			EvalFunctionDeclaration(method, extScope, obj)
 		}
+		for key, value := range extScope.Variables {
+			scope.Variables[key] = value
+		}
+		envs[exd.Name.(*parser.IdentifierStatement).Value.(string)] = extScope
 	}
-	return nil
+	return envs
 }
 
 func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
@@ -129,15 +134,15 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 		methods = class.Methods
 	}
 	scope := enviroment.NewEnv(class.Enviroment)
-	obj := types.NewObject(className, scope)
+	obj := types.NewObject(className, scope).(*types.ObjectValue)
 	EvalFunctionDeclaration(&parser.FunctionDeclaration{
 		Name:   "init",
 		Line:   -1,
 		Body:   []any{},
 		Params: []any{},
 	}, scope, obj)
-
-	DeclareExtends(class, env, scope, obj)
+	extends := DeclareExtends(class, env, scope, obj)
+	obj.Extends = extends
 	for _, method := range methods {
 		EvalFunctionDeclaration(method, scope, obj)
 	}
@@ -153,7 +158,7 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 
 func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
 	node.Enviroment = env
-	env.DeclareVariable(node.Name.(*lexar.Token).Value.(string), node, node.Line)
+	env.DeclareVariable(node.Name.(*parser.IdentifierStatement).Value.(string), node, node.Line)
 	return nil
 }
 
@@ -221,6 +226,8 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 		case types.Object:
 			v := reflect.ValueOf(left)
 			return v.MethodByName(string(strings.ToUpper(prop[:1]) + prop[1:]))
+		case *enviroment.Enviroment:
+			return t.GetVariable(prop, -1)
 		default:
 			return t.(map[string]any)[prop]
 		}
@@ -433,14 +440,17 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 		for i, res := range out {
 			results[i] = res.Interface()
 		}
+		if len(results) >= 1 {
+			return results[0]
+		}
 		return results
 	case *types.FunctionDeclaration:
 		var result any
 		scope = v.Enviroment
 		scope.AssignmenVariable("this", v.OwnerObject, -1)
 		scope.AssignmenVariable("super", &types.NativeFunctionDeclaration{
-			Call: func(values any) {
-				pp.Print(env)
+			Call: func(value *parser.ClassDeclaration) any {
+				return v.OwnerObject.(*types.ObjectValue).Extends[value.Name.(*parser.IdentifierStatement).Value.(string)]
 			},
 		}, -1)
 		for index, name := range v.Params {

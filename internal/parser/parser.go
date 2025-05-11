@@ -402,7 +402,9 @@ func (p *parser) ParseClassStatement() any {
 	return &ClassDeclaration{
 		Line:    p.At().Line,
 		Methods: methods,
-		Name:    identifier,
+		Name: &IdentifierStatement{
+			Value: identifier.Value,
+		},
 		Extends: args,
 	}
 }
