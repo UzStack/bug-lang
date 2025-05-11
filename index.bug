@@ -10,6 +10,7 @@ class B(A){
 }
 class C(B){
     func test1(){
+        super(B).test1();
         println("test3");
     }
 }

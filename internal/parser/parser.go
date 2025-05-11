@@ -326,6 +326,10 @@ func (p *parser) ParseCallMemberExpression() any {
 func (p *parser) ParseMemberExpression() any {
 	left := p.ParsePrimaryExpression()
 
+	if p.At().Type == lexar.OpenParen {
+		left = p.ParseCallExpression(left)
+	}
+
 	for p.At().Type == lexar.OpenBracket {
 		p.Next()
 		left = &MemberExpression{

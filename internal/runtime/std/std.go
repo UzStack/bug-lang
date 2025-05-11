@@ -110,3 +110,7 @@ func Input(values ...any) any {
 		Value: data,
 	}
 }
+
+func Super(values any) any {
+	return values
+}
