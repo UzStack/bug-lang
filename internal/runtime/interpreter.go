@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"strconv"
@@ -81,7 +82,6 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 		return node
 		// fmt.Printf("Tip: %T", astBody)
 	}
-	return nil
 }
 
 func EvalStdModuleStatement(node *parser.StdModule, env *enviroment.Enviroment) any {
@@ -101,6 +101,17 @@ func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) any {
 	env.DeclareVariable(node.Name, types.NewModule(scope), -1)
 	enviroment.Modules.Add(node.Path, types.NewModule(scope))
 	return lastResult
+}
+
+func DeclareExtends(class *parser.ClassDeclaration, env *enviroment.Enviroment, scope *enviroment.Enviroment, obj types.Object) any {
+	for _, extend := range class.Extends {
+		exd := Interpreter(extend, env).(*parser.ClassDeclaration)
+		DeclareExtends(exd, env, scope, obj)
+		for _, method := range exd.Methods {
+			EvalFunctionDeclaration(method, scope, obj)
+		}
+	}
+	return nil
 }
 
 func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
@@ -128,11 +139,7 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 		Params: []any{},
 	}, scope, obj)
 
-	for _, extend := range class.Extends {
-		for _, method := range Interpreter(extend, env).(*parser.ClassDeclaration).Methods {
-			EvalFunctionDeclaration(method, scope, obj)
-		}
-	}
+	DeclareExtends(class, env, scope, obj)
 	for _, method := range methods {
 		EvalFunctionDeclaration(method, scope, obj)
 	}
@@ -211,6 +218,8 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 		case *types.StdLibValue:
 			return reflect.ValueOf(t.Lib[prop])
 		case *types.ModuleValue:
+			pp.Print(t.Enviroment.Variables)
+			log.Fatal()
 			return t.Enviroment.GetVariable(prop, -1)
 		case types.Object:
 			v := reflect.ValueOf(left)
@@ -414,6 +423,7 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 	for _, arg := range node.Args {
 		args = append(args, Interpreter(arg, scope))
 	}
+
 	switch v := Interpreter(node.Caller, scope).(type) {
 	case *types.NativeFunctionDeclaration:
 		fun := reflect.ValueOf(v.Call)

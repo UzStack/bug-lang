@@ -1,11 +1,26 @@
-import "user" as u;
-
-
-class U(u.User){
-    func f(){
-        print(this.first_name);
+class A(){
+    func test1(){
+        println("test1");
     }
-
 }
-user = new U("Azamov", "Samandar", 20);
-user.f();
+class B(A){
+    func test1(){
+        println("test2");
+    }
+}
+class C(B){
+    func test1(){
+        println("test3");
+    }
+}
+
+
+i = 0;
+
+
+for (i <= 100){
+    print(i, ": ");
+    c = new C();
+    c.test1();
+    i = i + 1;
+}

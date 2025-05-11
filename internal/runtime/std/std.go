@@ -90,11 +90,15 @@ func Pprint(buf *bytes.Buffer, values ...any) {
 		}
 	}
 }
+func Println(values ...any) {
+	Print(values)
+	fmt.Print("\t\n")
+}
+
 func Print(values ...any) {
 	var buf bytes.Buffer
 	Pprint(&buf, values...)
 	fmt.Print(buf.String())
-	fmt.Print("\t\n")
 }
 
 func Input(values ...any) any {

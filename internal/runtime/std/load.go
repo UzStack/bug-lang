@@ -10,6 +10,11 @@ func Load(env *enviroment.Enviroment) {
 		Type: "native-function",
 		Call: Print,
 	}, -1)
+	env.DeclareVariable("println", &types.NativeFunctionDeclaration{
+		Type: "native-function",
+		Call: Println,
+	}, -1)
+
 	env.DeclareVariable("input", &types.NativeFunctionDeclaration{
 		Type: "native-function",
 		Call: Input,
