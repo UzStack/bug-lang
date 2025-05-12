@@ -180,9 +180,7 @@ func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviromen
 	for _, item := range node.Values {
 		values = append(values, Interpreter(item, env))
 	}
-	return &types.ArrayValue{
-		Values: values,
-	}
+	return types.NewArray(values)
 }
 
 func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviroment) any {
@@ -454,7 +452,7 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 			},
 		}, -1)
 		for index, name := range v.Params {
-			scope.DeclareVariable(name.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Args[index], env), -1)
+			scope.AssignmenVariable(name.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Args[index], env), -1)
 		}
 		for _, statement := range v.Body {
 			result = Interpreter(statement, scope)

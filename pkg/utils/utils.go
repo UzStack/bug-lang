@@ -4,18 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 )
 
 func InArray(value any, arr []any) bool {
-	for _, target := range arr {
-		if target == value {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(arr, value)
 }
 
 func Str2Int(value any) (int, error) {

@@ -4,8 +4,10 @@ type ArrayValue struct {
 	Values []any
 }
 
-func NewArray() Object {
-	return &ArrayValue{}
+func NewArray(value []any) Object {
+	return &ArrayValue{
+		Values: value,
+	}
 }
 
 func (a *ArrayValue) GetValue() any {

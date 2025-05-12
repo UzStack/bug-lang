@@ -3,9 +3,19 @@ import "pgsql";
 class DB(){
     func init(db){
         this.conn = pgsql.connect();
+        this.queryset = null;
     }
 
     func query(sql){
-        return pgsql.query(this.conn, sql);
+        this.queryset = pgsql.query(this.conn, sql);
+        return this;
+    }
+
+    func FindAll(){
+        return pgsql.findAll(this.queryset);
+    }
+
+    func Find(){
+        return pgsql.find(this.queryset);
     }
 }

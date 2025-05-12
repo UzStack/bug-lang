@@ -233,11 +233,11 @@ func (p *parser) ParseAdditiveExpression() any {
 }
 
 func (p *parser) ParseMultiplicativeExpression() any {
-	left := p.ParseCallMemberExpression()
+	left := p.ParseComputedMember()
 
 	for p.At().Value == "*" || p.At().Value == "/" || p.At().Value == "%" {
 		operator := p.Next().Value
-		right := p.ParseCallMemberExpression()
+		right := p.ParseComputedMember()
 		left = &BinaryExpression{
 			Line:     p.At().Line,
 			Left:     left,
@@ -315,21 +315,37 @@ func (p *parser) ParseBody() []any {
 	return body
 }
 
+func (p *parser) ParseComputedMember() any {
+	left := p.ParseCallMemberExpression()
+	for p.At().Type == lexar.OpenBracket {
+		p.Next()
+		left = &MemberExpression{
+			Line:     p.At().Line,
+			Left:     p.ParseMemberExpression(left),
+			Prop:     p.ParseAssignmentExpression(),
+			Computed: true,
+		}
+		p.Except(lexar.CloseBracket, "Excep close bracket computed member")
+	}
+	return left
+}
+
 func (p *parser) ParseCallMemberExpression() any {
-	member := p.ParseMemberExpression()
+	member := p.ParseMemberExpression(nil)
 	if p.At().Type == lexar.OpenParen {
 		return p.ParseCallExpression(member)
 	}
 	return member
 }
 
-func (p *parser) ParseMemberExpression() any {
-	left := p.ParsePrimaryExpression()
+func (p *parser) ParseMemberExpression(left any) any {
+	if left == nil {
+		left = p.ParsePrimaryExpression()
+	}
 
 	if p.At().Type == lexar.OpenParen {
 		left = p.ParseCallExpression(left)
 	}
-
 	for p.At().Type == lexar.OpenBracket {
 		p.Next()
 		left = &MemberExpression{

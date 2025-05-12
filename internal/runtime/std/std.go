@@ -21,6 +21,8 @@ var STDLIBS = map[string]map[string]any{
 	"pgsql": {
 		"connect": libs.PsqlConnect,
 		"query":   libs.Query,
+		"findAll": libs.FindAll,
+		"find":    libs.Find,
 	},
 }
 

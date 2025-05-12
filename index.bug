@@ -1,27 +1,9 @@
-class A(){
-    func test1(){
-        println("test1");
-    }
-}
-class B(A){
-    func test1(){
-        println("test2");
-    }
-}
-class C(B){
-    func test1(){
-        super(B).test1();
-        println("test3");
-    }
-}
+import "psql";
 
+db = new psql.DB("db");
 
-i = 0;
+#query = db.query("insert into users(name) values('ishladi')");  
+query = db.query("select id, name from users");
 
+println(query.FindAll()[0]["name"]);
 
-for (i <= 100){
-    print(i, ": ");
-    c = new C();
-    c.test1();
-    i = i + 1;
-}

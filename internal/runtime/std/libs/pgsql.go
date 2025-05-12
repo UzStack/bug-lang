@@ -3,6 +3,7 @@ package libs
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	_ "github.com/lib/pq"
@@ -25,8 +26,11 @@ func Query(db *sql.DB, sql *types.StringValue) any {
 	if err != nil {
 		panic(err)
 	}
-	defer rows.Close()
+	return rows
+}
 
+func FindAll(rows *sql.Rows) any {
+	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
 		panic(err)
@@ -43,12 +47,27 @@ func Query(db *sql.DB, sql *types.StringValue) any {
 		if err := rows.Scan(pointers...); err != nil {
 			panic(err)
 		}
-		res := make(map[string]any)
+		res := types.NewMap(make(map[string]any)).(*types.MapValue)
 		for i, col := range columns {
 			val := values[i]
-			res[col] = val
+			switch v := val.(type) {
+			case []byte:
+				res.Add(col, types.NewString(strings.TrimSpace(string(v))))
+			case int:
+				res.Add(col, types.NewInt(v))
+			case int8:
+				res.Add(col, types.NewInt(int(v)))
+			case int64:
+				res.Add(col, types.NewInt(int(v)))
+			default:
+				res.Add(col, types.NewString(strings.TrimSpace(v.(string))))
+			}
 		}
 		result = append(result, res)
 	}
-	return result
+	return types.NewArray(result)
+}
+
+func Find(rows *sql.Rows) any {
+	return FindAll(rows).(*types.ArrayValue).Values[0]
 }
