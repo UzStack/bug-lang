@@ -19,3 +19,7 @@ func (a *StringValue) GetValue() any {
 func (a *StringValue) Upper() any {
 	return NewString(strings.ToUpper(a.Value))
 }
+
+func (a *StringValue) Lower() any {
+	return NewString(strings.ToLower(a.Value))
+}

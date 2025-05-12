@@ -1,0 +1,7 @@
+import "psql";
+
+
+db = new psql.DB("db");
+
+query = db.query("select * from users");
+print(query.findAll());
