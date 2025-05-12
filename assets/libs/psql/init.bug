@@ -2,7 +2,7 @@ import "ffi";
 
 class DB(){
     func init(db){
-        this.obj = ffi.load("./plugins/pgsql.so");
+        this.obj = ffi.load("/etc/buglang/plugins/pgsql.so");
         this.conn = ffi.call(this.obj, "Connect", [])[0];
         this.queryset = null;
     }
