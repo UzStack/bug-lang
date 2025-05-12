@@ -21,12 +21,6 @@ var STDLIBS = map[string]map[string]any{
 		"load": libs.FFILoad,
 		"call": libs.FFICall,
 	},
-	"pgsql": {
-		"connect": libs.PsqlConnect,
-		"query":   libs.Query,
-		"findAll": libs.FindAll,
-		"find":    libs.Find,
-	},
 }
 
 func QuotationMark(value any) bool {

@@ -5,11 +5,11 @@
 *.exe
 *.exe~
 *.dll
-*.so
 *.dylib
 cpu.prof
 test.json
 main.py
+ffi/
 
 # Test binary, built with `go test -c`
 *.test

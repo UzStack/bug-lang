@@ -2,8 +2,5 @@ import "psql";
 
 db = new psql.DB("db");
 
-#query = db.query("insert into users(name) values('ishladi')");  
-query = db.query("select id, name from users");
-
-println(query.FindAll()[0]["name"]);
-
+query = db.query("select * from users");
+print(query.findAll());

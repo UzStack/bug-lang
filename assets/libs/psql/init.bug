@@ -1,21 +1,22 @@
-import "pgsql";
+import "ffi";
 
 class DB(){
     func init(db){
-        this.conn = pgsql.connect();
+        this.obj = ffi.load("./plugins/pgsql.so");
+        this.conn = ffi.call(this.obj, "Connect", [])[0];
         this.queryset = null;
     }
 
     func query(sql){
-        this.queryset = pgsql.query(this.conn, sql);
+        this.queryset = ffi.call(this.obj, "Query", [this.conn, sql])[0];
         return this;
     }
 
-    func FindAll(){
-        return pgsql.findAll(this.queryset);
+    func findAll(){
+        return ffi.call(this.obj, "FindAll", [this.queryset])[0];
     }
 
-    func Find(){
-        return pgsql.find(this.queryset);
+    func find(){
+        return ffi.call(this.obj, "Find", [this.queryset])[0];
     }
 }
