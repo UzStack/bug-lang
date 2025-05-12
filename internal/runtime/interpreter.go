@@ -12,7 +12,7 @@ import (
 	"github.com/UzStack/bug-lang/internal/runtime/std"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	"github.com/UzStack/bug-lang/pkg/utils"
-	"github.com/k0kubun/pp/v3"
+	"github.com/k0kubun/pp"
 )
 
 func Interpreter(astBody any, env *enviroment.Enviroment) any {
@@ -472,8 +472,6 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 		return nil
 	default:
 		pp.Print(v)
-
 	}
 	return nil
-
 }

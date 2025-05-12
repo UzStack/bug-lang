@@ -10,13 +10,16 @@ import (
 
 	"github.com/UzStack/bug-lang/internal/runtime/std/libs"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
-	"github.com/k0kubun/pp/v3"
 )
 
 var STDLIBS = map[string]map[string]any{
 	"math": {
 		"round": libs.Round,
 		"pow":   libs.Pow,
+	},
+	"ffi": {
+		"load": libs.FFILoad,
+		"call": libs.FFICall,
 	},
 	"pgsql": {
 		"connect": libs.PsqlConnect,
@@ -87,7 +90,7 @@ func Pprint(buf *bytes.Buffer, values ...any) {
 					Pprint(buf, refValue.Index(i).Interface())
 				}
 			} else {
-				pp.Print(val)
+				fmt.Print(val)
 			}
 		}
 	}
