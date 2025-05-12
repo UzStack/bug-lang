@@ -1,22 +1,22 @@
-# MyLang Documentation
+# BugLang Documentation
 
 1. Introduction
 
-MyLang is a simple, object-oriented programming language designed for ease of use and flexibility. It supports classes, inheritance, arrays, and basic control structures, making it suitable for both beginners and advanced developers. MyLang includes built-in libraries like `math` for common operations and provides a straightforward syntax for rapid development.
+BugLang is a simple, object-oriented programming language designed for ease of use and flexibility. It supports classes, inheritance, arrays, and basic control structures, making it suitable for both beginners and advanced developers. BugLang includes built-in libraries like `math` for common operations and provides a straightforward syntax for rapid development.
 
 ## Installation
 
-*Note: Installation instructions are not yet available as MyLang is under development. To run MyLang code, you need a compatible interpreter or compiler (to be provided). Check back for updates on setup instructions.*
+*Note: Installation instructions are not yet available as BugLang is under development. To run BugLang code, you need a compatible interpreter or compiler (to be provided). Check back for updates on setup instructions.*
 
 ## Syntax and Features
 
 ### 1. Classes and Inheritance
 
-MyLang supports object-oriented programming with classes and multiple inheritance. Classes are defined using the `class` keyword, and inheritance is specified by listing parent classes in parentheses.
+BugLang supports object-oriented programming with classes and multiple inheritance. Classes are defined using the `class` keyword, and inheritance is specified by listing parent classes in parentheses.
 
 - **Class Definition**:
 
-  ```mylang
+  ```buglang
   class A() {
       func init() {
           this.name = "A";
@@ -29,7 +29,7 @@ MyLang supports object-oriented programming with classes and multiple inheritanc
 
 - **Inheritance**: Use `super(ClassName)` to call methods from a specific parent class.
 
-  ```mylang
+  ```buglang
   class C(B, A) {
       func init() {
           super(A).init();
@@ -43,11 +43,11 @@ MyLang supports object-oriented programming with classes and multiple inheritanc
 
 ### 2. Arrays and Lists
 
-MyLang supports dynamic arrays (or lists) for storing collections of data. Arrays can hold mixed types, including numbers, strings, and objects.
+BugLang supports dynamic arrays (or lists) for storing collections of data. Arrays can hold mixed types, including numbers, strings, and objects.
 
 - **Array Declaration**:
 
-  ```mylang
+  ```buglang
   numbers = [20.4324, 324.423432, 10.21];
   ```
 
@@ -56,17 +56,17 @@ MyLang supports dynamic arrays (or lists) for storing collections of data. Array
   - `add(value)`: Appends a value to the array.
   - `size()`: Returns the length of the array.
 
-  ```mylang
+  ```buglang
   numbers.add(20.1122);
   ```
 
 ### 3. Loops
 
-MyLang provides a `for` loop for iteration. The loop condition is specified without parentheses, and the loop body is executed while the condition is true.
+BugLang provides a `for` loop for iteration. The loop condition is specified without parentheses, and the loop body is executed while the condition is true.
 
 - **For Loop**:
 
-  ```mylang
+  ```buglang
   for (i < users.size()) {
       user = users[i];
       println("name: ", user["name"]);
@@ -80,17 +80,17 @@ MyLang provides a `for` loop for iteration. The loop condition is specified with
 
 - `math.round(number, decimals)`: Rounds a number to the specified decimal places.
 
-  ```mylang
+  ```buglang
   println(math.round(20.4324, 2)); // Outputs: 20.43
   ```
 
 ### 5. Objects and Dictionaries
 
-MyLang supports dictionary-like objects for key-value pairs, accessible using square bracket notation (`user["key"]`).
+BugLang supports dictionary-like objects for key-value pairs, accessible using square bracket notation (`user["key"]`).
 
 - **Example**:
 
-  ```mylang
+  ```buglang
   users = [
       { "name": "Samandar", "age": 20, "id": 1 },
       { "name": "Nomalum", "age": 100, "id": 2 }
@@ -99,9 +99,9 @@ MyLang supports dictionary-like objects for key-value pairs, accessible using sq
 
 ## Example Code
 
-Below is a complete example demonstrating MyLang's features:
+Below is a complete example demonstrating BugLang's features:
 
-```mylang
+```buglang
 import "math";
 
 // Define class A
@@ -195,8 +195,8 @@ age: 100
 
 ## Contributing
 
-Contributions to MyLang are welcome! Please submit issues or pull requests to the repository (link TBD). Ensure your code follows the language's style and includes tests.
+Contributions to BugLang are welcome! Please submit issues or pull requests to the repository (link TBD). Ensure your code follows the language's style and includes tests.
 
 ## License
 
-MyLang is licensed under the MIT License. See the LICENSE file for details (to be added).
+BugLang is licensed under the MIT License. See the LICENSE file for details (to be added).
