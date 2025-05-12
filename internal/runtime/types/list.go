@@ -21,3 +21,7 @@ func (a *ArrayValue) Add(value any) {
 func (a *ArrayValue) Pop() {
 	a.Values = a.Values[:len(a.Values)-1]
 }
+
+func (a *ArrayValue) Size() any {
+	return NewInt(len(a.Values))
+}
