@@ -1,0 +1,6 @@
+import "ffi";
+
+
+name = "Samandar";
+module = ffi.load("./ffi/test/test.so");
+println(ffi.call(module, "Test", []));

@@ -3,20 +3,20 @@ import "ffi";
 class DB(){
     func init(db){
         this.obj = ffi.load("/etc/buglang/plugins/pgsql.so");
-        this.conn = ffi.call(this.obj, "Connect", [])[0];
+        this.conn = ffi.call(this.obj, "Connect", []);
         this.queryset = null;
     }
 
     func query(sql){
-        this.queryset = ffi.call(this.obj, "Query", [this.conn, sql])[0];
+        this.queryset = ffi.call(this.obj, "Query", [this.conn, sql]);
         return this;
     }
 
     func findAll(){
-        return ffi.call(this.obj, "FindAll", [this.queryset])[0];
+        return ffi.call(this.obj, "FindAll", [this.queryset]);
     }
 
     func find(){
-        return ffi.call(this.obj, "Find", [this.queryset])[0];
+        return ffi.call(this.obj, "Find", [this.queryset]);
     }
 }
