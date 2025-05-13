@@ -26,9 +26,17 @@ func FFICall(plg *plugin.Plugin, symbolName *types.StringValue, args *types.Arra
 		callArgs[i] = reflect.ValueOf(arg)
 	}
 	results := v.Call(callArgs)
-	result := make([]any, len(results))
-	for i, res := range results {
-		result[i] = res.Interface()
+	if len(results) >= 1 {
+		switch v := results[0].Interface().(type) {
+		case int:
+			return types.NewInt(v)
+		case uint:
+			return types.NewInt(int(v))
+		case string:
+			return types.NewString(v)
+		default:
+			return v
+		}
 	}
-	return types.NewArray(result)
+	return types.NewNull()
 }

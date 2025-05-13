@@ -1,0 +1,9 @@
+header("Content-Type", "application/json");
+
+import "psql";
+
+db = new psql.DB("db");
+query = db.query("select * from users");
+
+users = query.findAll();
+print(users);

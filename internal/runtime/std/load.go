@@ -14,6 +14,14 @@ func Load(env *enviroment.Enviroment) {
 		Type: "native-function",
 		Call: Println,
 	}, -1)
+	env.DeclareVariable("console", &types.NativeFunctionDeclaration{
+		Type: "native-function",
+		Call: Print,
+	}, -1)
+	env.DeclareVariable("consoleln", &types.NativeFunctionDeclaration{
+		Type: "native-function",
+		Call: Println,
+	}, -1)
 
 	env.DeclareVariable("input", &types.NativeFunctionDeclaration{
 		Type: "native-function",
@@ -25,5 +33,5 @@ func Load(env *enviroment.Enviroment) {
 	}, -1)
 	env.DeclareVariable("true", types.NewBool(true), -1)
 	env.DeclareVariable("false", types.NewBool(false), -1)
-	env.DeclareVariable("null", types.NewNull(nil), -1)
+	env.DeclareVariable("null", types.NewNull(), -1)
 }

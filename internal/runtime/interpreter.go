@@ -434,14 +434,10 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 			callArgs[i] = reflect.ValueOf(arg)
 		}
 		out := fun.Call(callArgs)
-		var results = make([]any, len(out))
-		for i, res := range out {
-			results[i] = res.Interface()
+		if len(out) >= 1 {
+			return out[0].Interface()
 		}
-		if len(results) >= 1 {
-			return results[0]
-		}
-		return results
+		return types.NewNull()
 	case *types.FunctionDeclaration:
 		var result any
 		scope = v.Enviroment

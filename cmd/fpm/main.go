@@ -53,6 +53,12 @@ func Worker(jobs <-chan Job) {
 				std.Pprint(&buf, values)
 			},
 		}, -1)
+		env.AssignmenVariable("println", &types.NativeFunctionDeclaration{
+			Call: func(values ...any) {
+				std.Pprint(&buf, values)
+				fmt.Fprint(&buf, "\n")
+			},
+		}, -1)
 		env.AssignmenVariable("header", &types.NativeFunctionDeclaration{
 			Call: func(key any, value any) {
 				headers = append(headers, Header{

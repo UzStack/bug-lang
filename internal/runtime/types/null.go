@@ -4,9 +4,9 @@ type NullValue struct {
 	Value any
 }
 
-func NewNull(value any) Object {
+func NewNull() Object {
 	return &NullValue{
-		Value: value,
+		Value: nil,
 	}
 }
 func (a *NullValue) GetValue() any {
