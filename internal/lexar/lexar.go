@@ -63,7 +63,11 @@ func (t *tokenize) At() string {
 
 func (t *tokenize) FindString() {
 	var str string
-	for t.At() != "\"" {
+	for t.At() != "\"" || t.Chars[t.Index-1] == "\\" {
+		if t.At() == "\\" && t.Chars[t.Index+1] == "\"" {
+			t.Next()
+			continue
+		}
 		str += t.Next()
 	}
 	t.token(str, String)
@@ -166,6 +170,7 @@ func (t *tokenize) Tokenize(code string) []*Token {
 				t.token(char, BinaryOperator)
 			}
 		}
+
 		t.Handle()
 	}
 	t.Handle()

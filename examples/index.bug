@@ -27,17 +27,15 @@ class C(B, A){
         println(this.name);
         this.name = "C";
     }
-
     func getName(){
         return this.name;
     }
 }
 
-
 c = new C();
 println(c.getName());
 
-users = [
+var users = [
     {
         "name": "Samandar",
         "age": 20,
@@ -61,7 +59,7 @@ for (i < users.size()){
     i = i + 1;
 }
 
-numbers = [20.4324, 324.423432, 10.21];
+var numbers = [20.4324, 324.423432, 10.21];
 numbers.add(20.1122);
 i = 0;
 for (i < numbers.size()){
