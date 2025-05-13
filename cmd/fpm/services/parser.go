@@ -23,7 +23,7 @@ func ParsePostData(request *http.Request) any {
 }
 
 func ParseGetData(request *http.Request) any {
-	data := types.NewMap(make(map[string]any))
+	data := types.NewMap(make(map[string]any)).(*types.MapValue)
 	rawQuery := request.URL.RawQuery
 	if len(rawQuery) == 0 {
 		return data
@@ -38,10 +38,10 @@ func ParseGetData(request *http.Request) any {
 }
 
 func ParseRequest(request *http.Request) any {
-	headers := types.NewMap(make(map[string]any))
+	headers := types.NewMap(make(map[string]any)).(*types.MapValue)
 	for key, values := range request.Header {
 		if len(values) > 1 {
-			value := types.NewArray([]any{})
+			value := types.NewArray([]any{}).(*types.ArrayValue)
 			for _, v := range values {
 				value.Add(utils.DecodeBug(v))
 			}
@@ -53,7 +53,7 @@ func ParseRequest(request *http.Request) any {
 		}
 	}
 
-	globals := types.NewMap(make(map[string]any))
+	globals := types.NewMap(make(map[string]any)).(*types.MapValue)
 	globals.Add("RequestURI", types.NewString(request.RequestURI))
 	globals.Add("Host", types.NewString(request.Host))
 	globals.Add("Method", types.NewString(request.Method))

@@ -51,25 +51,19 @@ func Worker(jobs <-chan Job) {
 		std.Load(env)
 		var buf bytes.Buffer
 		var headers []Header
-		env.AssignmenVariable("print", &types.NativeFunctionDeclaration{
-			Call: func(values ...any) {
-				std.Pprint(&buf, values)
-			},
-		}, -1)
-		env.AssignmenVariable("println", &types.NativeFunctionDeclaration{
-			Call: func(values ...any) {
-				std.Pprint(&buf, values)
-				fmt.Fprint(&buf, "\n")
-			},
-		}, -1)
-		env.AssignmenVariable("header", &types.NativeFunctionDeclaration{
-			Call: func(key any, value any) {
-				headers = append(headers, Header{
-					Key:   key.(*types.StringValue).Value,
-					Value: value.(*types.StringValue).Value,
-				})
-			},
-		}, -1)
+		env.AssignmenVariable("print", types.NewNativeFunction(func(values ...any) {
+			std.Pprint(&buf, values)
+		}), -1)
+		env.AssignmenVariable("println", types.NewNativeFunction(func(values ...any) {
+			std.Pprint(&buf, values)
+			fmt.Fprint(&buf, "\n")
+		}), -1)
+		env.AssignmenVariable("header", types.NewNativeFunction(func(key any, value any) {
+			headers = append(headers, Header{
+				Key:   key.(*types.StringValue).Value,
+				Value: value.(*types.StringValue).Value,
+			})
+		}), -1)
 		// Load gloabl variables
 		env.AssignmenVariable("_POST", services.ParsePostData(request), -1)
 		env.AssignmenVariable("_GET", services.ParseGetData(request), -1)

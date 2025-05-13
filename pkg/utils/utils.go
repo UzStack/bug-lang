@@ -96,7 +96,7 @@ func DecodeBug(data any) any {
 	case reflect.Bool:
 		return types.NewBool(data.(bool))
 	case reflect.Map:
-		response := types.NewMap(make(map[string]any))
+		response := types.NewMap(make(map[string]any)).(*types.MapValue)
 		for key, value := range data.(map[string]any) {
 			response.Add(key, DecodeBug(value))
 		}
@@ -115,13 +115,13 @@ func EncodeBug(data any) any {
 	switch v := data.(type) {
 	case *types.ArrayValue:
 		var response []any
-		for _, value := range v.GetValue() {
+		for _, value := range v.GetValue().([]any) {
 			response = append(response, EncodeBug(value))
 		}
 		return response
 	case *types.MapValue:
 		response := make(map[string]any)
-		for key, value := range v.GetValue() {
+		for key, value := range v.GetValue().(map[string]any) {
 			response[Int2String(EncodeBug(key))] = EncodeBug(value)
 		}
 		return response

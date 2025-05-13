@@ -16,4 +16,10 @@ func Load(env *enviroment.Enviroment) {
 	env.DeclareVariable("true", types.NewBool(true), -1)
 	env.DeclareVariable("false", types.NewBool(false), -1)
 	env.DeclareVariable("null", types.NewNull(), -1)
+
+	// Global variables
+	env.DeclareVariable("_GET", types.NewMap(nil), -1)
+	env.DeclareVariable("_POST", types.NewMap(nil), -1)
+	env.DeclareVariable("_REQUEST", types.NewMap(nil), -1)
+	env.DeclareVariable("_GLOBALS", types.NewMap(nil), -1)
 }

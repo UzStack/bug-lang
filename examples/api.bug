@@ -8,8 +8,6 @@ import "json";
 
 #users = query.findAll();
 #print(users);
-
-
 data = [
     _GET, _POST, _REQUEST, _GLOBALS
 ];
