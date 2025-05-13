@@ -23,6 +23,7 @@ var STDLIBS = map[string]map[string]any{
 	},
 	"json": {
 		"encode": libs.JsonEncode,
+		"decode": libs.JsonDecode,
 	},
 }
 

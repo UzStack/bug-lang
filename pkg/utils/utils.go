@@ -91,6 +91,10 @@ func DecodeBug(data any) any {
 		return types.NewInt(int(data.(int16)))
 	case reflect.Int32:
 		return types.NewInt(int(data.(int32)))
+	case reflect.Float64:
+		return types.NewFloat(data.(float64))
+	case reflect.Float32:
+		return types.NewFloat(float64(data.(float32)))
 	case reflect.Int64:
 		return types.NewInt(int(data.(int64)))
 	case reflect.Bool:
