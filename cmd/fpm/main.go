@@ -8,6 +8,7 @@ import (
 	"net/http/fcgi"
 	"os"
 
+	"github.com/UzStack/bug-lang/cmd/fpm/services"
 	"github.com/UzStack/bug-lang/internal/lexar"
 	"github.com/UzStack/bug-lang/internal/parser"
 	"github.com/UzStack/bug-lang/internal/runtime"
@@ -19,6 +20,7 @@ import (
 type Job struct {
 	File     string
 	Response chan Result
+	Request  *http.Request
 }
 
 type Result struct {
@@ -34,6 +36,7 @@ type Header struct {
 func Worker(jobs <-chan Job) {
 	for job := range jobs {
 		code, err := os.ReadFile(job.File)
+		request := job.Request
 		if err != nil {
 			job.Response <- Result{
 				Body: fmt.Sprintf("Error reading file %s: %v", job.File, err),
@@ -67,6 +70,12 @@ func Worker(jobs <-chan Job) {
 				})
 			},
 		}, -1)
+		// Load gloabl variables
+		env.AssignmenVariable("_POST", services.ParsePostData(request), -1)
+		env.AssignmenVariable("_GET", services.ParseGetData(request), -1)
+		env.AssignmenVariable("_REQUEST", services.ParseRequest(request), -1)
+		env.AssignmenVariable("_GLOBALS", services.ParseGlobals(request), -1)
+
 		runtime.Interpreter(ast, env)
 		job.Response <- Result{
 			Body:    buf.String(),
@@ -82,7 +91,7 @@ func handler(w http.ResponseWriter, r *http.Request, jobs chan<- Job) {
 	file := params["DOCUMENT_ROOT"] + params["DOCUMENT_URI"]
 	result := make(chan Result)
 	// Faylni workerga yuborish
-	jobs <- Job{File: file, Response: result}
+	jobs <- Job{File: file, Response: result, Request: r}
 	res := <-result
 	for _, header := range res.Headers {
 		w.Header().Set(header.Key, header.Value)

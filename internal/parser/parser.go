@@ -145,7 +145,10 @@ func (p *parser) ParseMapItems() map[string]any {
 		}
 		p.Except(lexar.Colon, "Except colon Object")
 		items[key] = p.ParseAssignmentExpression()
-		p.Except(lexar.Comma, "Except comma Object")
+		// p.Except(lexar.Comma, "Except comma Object")
+		if p.At().Type == lexar.Comma {
+			p.Next()
+		}
 	}
 	p.Except(lexar.CloseBrace, "Except close brace Object")
 	return items

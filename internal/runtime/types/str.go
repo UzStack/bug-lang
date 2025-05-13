@@ -6,7 +6,7 @@ type StringValue struct {
 	Value string
 }
 
-func NewString(value string) Object {
+func NewString(value string) *StringValue {
 	return &StringValue{
 		Value: value,
 	}
