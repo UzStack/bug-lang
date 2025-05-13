@@ -427,7 +427,7 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 	}
 
 	switch v := Interpreter(node.Caller, scope).(type) {
-	case *types.NativeFunctionDeclaration:
+	case *types.NativeFunctionValue:
 		fun := reflect.ValueOf(v.Call)
 		callArgs := make([]reflect.Value, len(args))
 		for i, arg := range args {
@@ -442,7 +442,7 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 		var result any
 		scope = v.Enviroment
 		scope.AssignmenVariable("this", v.OwnerObject, -1)
-		scope.AssignmenVariable("super", &types.NativeFunctionDeclaration{
+		scope.AssignmenVariable("super", &types.NativeFunctionValue{
 			Call: func(value *parser.ClassDeclaration) any {
 				return v.OwnerObject.(*types.ObjectValue).Extends[value.Name.(*parser.IdentifierStatement).Value.(string)]
 			},

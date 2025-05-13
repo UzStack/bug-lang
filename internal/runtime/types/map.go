@@ -4,13 +4,13 @@ type MapValue struct {
 	Values map[string]any
 }
 
-func NewMap(values map[string]any) *MapValue {
+func NewMap(values map[string]any) Object {
 	return &MapValue{
 		Values: values,
 	}
 }
 
-func (a *MapValue) GetValue() map[string]any {
+func (a *MapValue) GetValue() any {
 	return a.Values
 }
 

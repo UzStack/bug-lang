@@ -62,7 +62,7 @@ func Pprint(buf *bytes.Buffer, values ...any) {
 		case *types.MapValue:
 			fmt.Fprint(buf, "{")
 			i := 0
-			values := v.GetValue()
+			values := v.GetValue().(map[string]any)
 			size := len(values)
 			for key, value := range values {
 				i++

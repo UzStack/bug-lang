@@ -20,11 +20,6 @@ type FunctionDeclaration struct {
 	Enviroment  *enviroment.Enviroment
 }
 
-type NativeFunctionDeclaration struct {
-	Type string
-	Call any
-}
-
 type RuntimeValue struct {
 	Type  RuntimeTypes
 	Value any
