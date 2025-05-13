@@ -29,6 +29,7 @@ const (
 var STDLIBS = []any{
 	"math",
 	"ffi",
+	"json",
 }
 
 type Statement struct {

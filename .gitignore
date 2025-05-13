@@ -10,6 +10,7 @@ cpu.prof
 test.json
 main.py
 ffi/
+test.go
 
 # Test binary, built with `go test -c`
 *.test

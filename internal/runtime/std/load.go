@@ -6,31 +6,13 @@ import (
 )
 
 func Load(env *enviroment.Enviroment) {
-	env.DeclareVariable("print", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: Print,
-	}, -1)
-	env.DeclareVariable("println", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: Println,
-	}, -1)
-	env.DeclareVariable("console", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: Print,
-	}, -1)
-	env.DeclareVariable("consoleln", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: Println,
-	}, -1)
+	env.DeclareVariable("print", types.NewNativeFunction(Print), -1)
+	env.DeclareVariable("println", types.NewNativeFunction(Println), -1)
+	env.DeclareVariable("console", types.NewNativeFunction(Print), -1)
+	env.DeclareVariable("consoleln", types.NewNativeFunction(Println), -1)
 
-	env.DeclareVariable("input", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: Input,
-	}, -1)
-	env.DeclareVariable("header", &types.NativeFunctionDeclaration{
-		Type: "native-function",
-		Call: Header,
-	}, -1)
+	env.DeclareVariable("input", types.NewNativeFunction(Input), -1)
+	env.DeclareVariable("header", types.NewNativeFunction(Header), -1)
 	env.DeclareVariable("true", types.NewBool(true), -1)
 	env.DeclareVariable("false", types.NewBool(false), -1)
 	env.DeclareVariable("null", types.NewNull(), -1)

@@ -21,6 +21,9 @@ var STDLIBS = map[string]map[string]any{
 		"load": libs.FFILoad,
 		"call": libs.FFICall,
 	},
+	"json": {
+		"encode": libs.JsonEncode,
+	},
 }
 
 func QuotationMark(value any) bool {
@@ -59,7 +62,7 @@ func Pprint(buf *bytes.Buffer, values ...any) {
 		case *types.MapValue:
 			fmt.Fprint(buf, "{")
 			i := 0
-			values := v.GetValue().(map[string]any)
+			values := v.GetValue()
 			size := len(values)
 			for key, value := range values {
 				i++

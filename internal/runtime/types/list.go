@@ -4,13 +4,13 @@ type ArrayValue struct {
 	Values []any
 }
 
-func NewArray(value []any) Object {
+func NewArray(value []any) *ArrayValue {
 	return &ArrayValue{
 		Values: value,
 	}
 }
 
-func (a *ArrayValue) GetValue() any {
+func (a *ArrayValue) GetValue() []any {
 	return a.Values
 }
 
