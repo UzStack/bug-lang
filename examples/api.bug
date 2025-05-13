@@ -1,14 +1,15 @@
 header("Content-Type", "application/json");
 import "json";
+// import "psql";
 
-#import "psql";
+// db = new psql.DB("db");
+// query = db.query("select * from users");
 
-#db = new psql.DB("db");
-#query = db.query("select * from users");
-
-#users = query.findAll();
-#print(users);
-data = [
+// users = query.findAll();
+// print(users);
+var data = [
     _GET, _POST, _REQUEST, _GLOBALS
 ];
+
 println(json.encode(data));
+println(json.decode("{\"name\":1}"));
