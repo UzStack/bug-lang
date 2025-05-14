@@ -51,7 +51,7 @@ func Int2Float(value any) (float64, error) {
 	case *types.FloatValue:
 		return float64(v.Value), nil
 	}
-	return -1, errors.New("value not integer")
+	return -1, fmt.Errorf("%s is not integer", value)
 }
 
 func Float2Int(value any) (int, error) {

@@ -33,7 +33,11 @@ func main() {
 		panic(err.Error())
 	}
 	tokenize := lexar.NewTokenize()
-	tokens := tokenize.Tokenize(string(code))
+	tokens, err := tokenize.Tokenize(string(code))
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(2)
+	}
 	parser := parser.NewParser(tokens, "")
 	ast := parser.CreateAST()
 	env := enviroment.NewGlobalEnv()

@@ -63,17 +63,18 @@ func (t *tokenize) At() string {
 	return t.Chars[t.Index]
 }
 
-func (t *tokenize) FindString() {
+func (t *tokenize) FindString() error {
 	var str string
 	for t.At() != "\"" || t.Chars[t.Index-1] == "\\" {
 		str += t.Next()
 	}
 	str, err := strconv.Unquote("\"" + str + "\"")
 	if err != nil {
-		panic(fmt.Sprintf("string unquote error: %s", err.Error()))
+		return fmt.Errorf("string unquote error: %s", err.Error())
 	}
 	t.token(str, String)
 	t.Index++
+	return nil
 }
 
 func (t *tokenize) FindEnd() {
@@ -83,7 +84,7 @@ func (t *tokenize) FindEnd() {
 	t.Next()
 }
 
-func (t *tokenize) Tokenize(code string) []*Token {
+func (t *tokenize) Tokenize(code string) ([]*Token, error) {
 	t.Chars = strings.Split(code, "")
 	for t.Index < len(t.Chars) {
 		char := t.Next()
@@ -95,7 +96,9 @@ func (t *tokenize) Tokenize(code string) []*Token {
 		}
 		if char == "\"" {
 			t.Handle()
-			t.FindString()
+			if err := t.FindString(); err != nil {
+				return nil, err
+			}
 			continue
 		}
 		if char == "/" && t.Chars[t.Index] == "/" {
@@ -177,5 +180,5 @@ func (t *tokenize) Tokenize(code string) []*Token {
 	}
 	t.Handle()
 	t.token("EndOfLine", EOF)
-	return t.Get()
+	return t.Get(), nil
 }

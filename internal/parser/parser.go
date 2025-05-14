@@ -497,7 +497,10 @@ func (p *parser) ParseImportStatement() any {
 		return code
 	}
 	tokenizer := lexar.NewTokenize()
-	tokens := tokenizer.Tokenize(string(readCode(path)))
+	tokens, err := tokenizer.Tokenize(string(readCode(path)))
+	if err != nil {
+		return nil
+	}
 	parser := NewParser(tokens, p.BaseDir)
 	program := &Module{
 		Line: p.At().Line,
