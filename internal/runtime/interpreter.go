@@ -15,7 +15,7 @@ import (
 	"github.com/k0kubun/pp"
 )
 
-func Interpreter(astBody any, env *enviroment.Enviroment) any {
+func Interpreter(astBody any, env *enviroment.Enviroment) (any, error) {
 	switch node := astBody.(type) {
 	case *parser.NumberLiteral:
 		value, err := strconv.Atoi(node.Value.(string))
@@ -23,21 +23,21 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 			fmt.Println("Type error: ", node.Value, "not integer")
 			os.Exit(1)
 		}
-		return types.NewInt(value)
+		return types.NewInt(value), nil
 	case *parser.StringLiteral:
 		value, err := node.Value.(string)
 		if !err {
 			fmt.Println("Type not string", value)
 			os.Exit(1)
 		}
-		return types.NewString(value)
+		return types.NewString(value), nil
 	case *parser.FloatLiteral:
 		value, err := strconv.ParseFloat(node.Value.(string), 64)
 		if err != nil {
 			fmt.Println("Type error: ", node.Value, "not float")
 			os.Exit(1)
 		}
-		return types.NewFloat(value)
+		return types.NewFloat(value), nil
 	case *parser.Module:
 		return EvalModuleStatement(node, env)
 	case *parser.StdModule:
@@ -77,35 +77,53 @@ func Interpreter(astBody any, env *enviroment.Enviroment) any {
 	case *parser.ObjectExpression:
 		return EvalObjectExpression(node, env)
 	default:
-		return node
+		return node, nil
 		// fmt.Printf("Tip: %T", astBody)
 	}
 }
 
-func EvalStdModuleStatement(node *parser.StdModule, env *enviroment.Enviroment) any {
-	env.DeclareVariable(node.Name, types.NewStdLib(node.Name, std.STDLIBS[node.Path]), -1)
-	return nil
-}
-func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) any {
-	scope := enviroment.NewEnv(nil)
-	std.Load(scope)
-	var lastResult any
-	if module := enviroment.Modules.Get(node.Path); module != nil {
-		return env.DeclareVariable(node.Name, module, -1)
+func EvalBody(statements []any, env *enviroment.Enviroment) (any, error, bool) {
+	for _, statement := range statements {
+		res, err := Interpreter(statement, env)
+		if err != nil {
+			return nil, err, false
+		}
+		if isReturn, response := IsReturn(res); isReturn {
+			return response, nil, true
+		}
 	}
-	for _, stmt := range node.Body {
-		lastResult = Interpreter(stmt, scope)
-	}
-	env.DeclareVariable(node.Name, types.NewModule(scope), -1)
-	enviroment.Modules.Add(node.Path, types.NewModule(scope))
-	return lastResult
+	return nil, nil, false
 }
 
-func DeclareExtends(class *parser.ClassDeclaration, env *enviroment.Enviroment, scope *enviroment.Enviroment, obj types.Object) map[string]*enviroment.Enviroment {
+func EvalStdModuleStatement(node *parser.StdModule, env *enviroment.Enviroment) (any, error) {
+	env.DeclareVariable(node.Name, types.NewStdLib(node.Name, std.STDLIBS[node.Path]), node.Line)
+	return nil, nil
+}
+func EvalModuleStatement(node *parser.Module, env *enviroment.Enviroment) (any, error) {
+	scope := enviroment.NewEnv(nil)
+	std.Load(scope)
+	if module := enviroment.Modules.Get(node.Path); module != nil {
+		return env.DeclareVariable(node.Name, module, node.Line), nil
+	}
+	for _, stmt := range node.Body {
+		if _, err := Interpreter(stmt, scope); err != nil {
+			return nil, err
+		}
+	}
+	env.DeclareVariable(node.Name, types.NewModule(scope), node.Line)
+	enviroment.Modules.Add(node.Path, types.NewModule(scope))
+	return nil, nil
+}
+
+func DeclareExtends(class *parser.ClassDeclaration, env *enviroment.Enviroment, scope *enviroment.Enviroment, obj types.Object) (map[string]*enviroment.Enviroment, error) {
 	envs := make(map[string]*enviroment.Enviroment)
 	for _, extend := range class.Extends {
 		extScope := enviroment.NewEnv(scope)
-		exd := Interpreter(extend, env).(*parser.ClassDeclaration)
+		res, err := Interpreter(extend, env)
+		if err != nil {
+			return nil, err
+		}
+		exd := res.(*parser.ClassDeclaration)
 		DeclareExtends(exd, env, scope, obj)
 		for _, method := range exd.Methods {
 			EvalFunctionDeclaration(method, extScope, obj)
@@ -115,10 +133,10 @@ func DeclareExtends(class *parser.ClassDeclaration, env *enviroment.Enviroment, 
 		}
 		envs[exd.Name.(*parser.IdentifierStatement).Value.(string)] = extScope
 	}
-	return envs
+	return envs, nil
 }
 
-func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Enviroment) any {
+func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Enviroment) (any, error) {
 	caller := node.Caller.(*parser.CallStatement)
 	var methods []*parser.FunctionDeclaration
 	var className string
@@ -126,244 +144,345 @@ func EvalObjectExpression(node *parser.ObjectExpression, env *enviroment.Envirom
 	switch t := caller.Caller.(type) {
 	case *parser.IdentifierStatement:
 		className = t.Value.(string)
-		class = env.GetVariable(className, -1).(*parser.ClassDeclaration)
+		res, err := env.GetVariable(className, node.Line)
+		if err != nil {
+			return nil, err
+		}
+		class = res.(*parser.ClassDeclaration)
 		methods = class.Methods
 	case *parser.MemberExpression:
 		className = t.Prop.(*parser.IdentifierStatement).Value.(string)
-		class = Interpreter(t, env).(*parser.ClassDeclaration)
+		res, err := Interpreter(t, env)
+		if err != nil {
+			return nil, err
+		}
+		class = res.(*parser.ClassDeclaration)
 		methods = class.Methods
 	}
 	scope := enviroment.NewEnv(class.Enviroment)
 	obj := types.NewObject(className, scope).(*types.ObjectValue)
 	EvalFunctionDeclaration(&parser.FunctionDeclaration{
 		Name:   "init",
-		Line:   -1,
+		Line:   node.Line,
 		Body:   []any{},
 		Params: []any{},
 	}, scope, obj)
-	extends := DeclareExtends(class, env, scope, obj)
+	extends, err := DeclareExtends(class, env, scope, obj)
+	if err != nil {
+		return nil, err
+	}
 	obj.Extends = extends
 	for _, method := range methods {
 		EvalFunctionDeclaration(method, scope, obj)
 	}
-	EvalCallStatement(&parser.CallStatement{
+	_, err = EvalCallStatement(&parser.CallStatement{
 		Caller: &parser.IdentifierStatement{
 			Value: "init",
 		},
 		Args: caller.Args,
 	}, scope)
-	return obj
+
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 
 }
 
-func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) any {
+func EvalClassDeclaration(node *parser.ClassDeclaration, env *enviroment.Enviroment) (any, error) {
 	node.Enviroment = env
-	env.DeclareVariable(node.Name.(*parser.IdentifierStatement).Value.(string), node, node.Line)
-	return nil
+	return env.DeclareVariable(node.Name.(*parser.IdentifierStatement).Value.(string), node, node.Line), nil
 }
 
-func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Enviroment) any {
-	env.DeclareVariable(node.Name, Interpreter(node.Value, env), node.Line)
-	return nil
+func VariableDeclaration(node *parser.VariableDeclaration, env *enviroment.Enviroment) (any, error) {
+	value, err := Interpreter(node.Value, env)
+	if err != nil {
+		return nil, err
+	}
+	return env.DeclareVariable(node.Name, value, node.Line), nil
 }
 
-func EvalMapDeclaration(node *parser.MapExpression, env *enviroment.Enviroment) any {
+func EvalMapDeclaration(node *parser.MapExpression, env *enviroment.Enviroment) (any, error) {
 	values := make(map[string]any)
 
 	for key, item := range node.Values {
-		values[key] = Interpreter(item, env)
+		value, err := Interpreter(item, env)
+		if err != nil {
+			return nil, err
+		}
+		values[key] = value
 	}
-	return types.NewMap(values)
+	return types.NewMap(values), nil
 }
-func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviroment) any {
+func EvalArrayExpression(node *parser.ArrayExpression, env *enviroment.Enviroment) (any, error) {
 	var values []any
 	for _, item := range node.Values {
-		values = append(values, Interpreter(item, env))
+		value, err := Interpreter(item, env)
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, value)
 	}
-	return types.NewArray(values)
+	return types.NewArray(values), nil
 }
 
-func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviroment) any {
-	return &types.ReturnValue{
-		Value: Interpreter(node.Value, env),
+func EvalReturnStatement(node *parser.ReturnStatement, env *enviroment.Enviroment) (any, error) {
+	value, err := Interpreter(node.Value, env)
+	if err != nil {
+		return nil, err
 	}
+	return &types.ReturnValue{
+		Value: value,
+	}, nil
 }
-func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Enviroment) any {
+func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Enviroment) (any, error) {
 	if node.Computed {
-		switch t := Interpreter(node.Left, env).(type) {
+		left, err := Interpreter(node.Left, env)
+		if err != nil {
+			return nil, err
+		}
+		switch t := left.(type) {
 		case *types.ArrayValue:
-			index, _ := utils.Str2Int(Interpreter(node.Prop, env).(types.Object).GetValue())
-			return t.Values[index]
+			prop, err := Interpreter(node.Prop, env)
+			if err != nil {
+				return nil, err
+			}
+			index, _ := utils.Str2Int(prop.(types.Object).GetValue())
+			return t.Values[index], nil
 		// case *types.ObjectValue:
 		// return t.Values[Interpreter(node.Prop, env).(types.Object).GetValue().(string)]
 		case *types.MapValue:
-			name := Interpreter(node.Prop, env).(types.Object)
+			prop, err := Interpreter(node.Prop, env)
+			if err != nil {
+				return nil, err
+			}
+			name := prop.(types.Object)
 			if node.Assign != nil {
 				t.Values[name.GetValue().(string)] = node.Assign
 			}
-			index, _ := Interpreter(node.Prop, env).(types.Object).GetValue().(string)
+			prop, err = Interpreter(node.Prop, env)
+			if err != nil {
+				return nil, err
+			}
+			index, _ := prop.(types.Object).GetValue().(string)
 			response, ok := t.Values[index]
 			if !ok {
 				fmt.Printf("Map item not found: %s", index)
 			}
-			return response
+			return response, nil
 		default:
-			return nil
+			return nil, nil
 		}
 
 	} else if node.Assign != nil {
-		left := Interpreter(node.Left, env).(*types.ObjectValue)
+		res, err := Interpreter(node.Left, env)
+		if err != nil {
+			return nil, err
+		}
+		left := res.(*types.ObjectValue)
 		name := node.Prop.(*parser.IdentifierStatement).Value.(string)
-		return left.Enviroment.AssignmenVariable(name, node.Assign, -1)
+		return left.Enviroment.AssignmenVariable(name, node.Assign, node.Line), nil
 	} else {
-		left := Interpreter(node.Left, env)
+		left, err := Interpreter(node.Left, env)
+		if err != nil {
+			return nil, err
+		}
 		prop := node.Prop.(*parser.IdentifierStatement).Value.(string)
 		switch t := left.(type) {
 		case *types.ObjectValue:
-			return t.Enviroment.GetVariable(prop, -1)
+			return t.Enviroment.GetVariable(prop, node.Line)
 		case *types.StdLibValue:
-			return reflect.ValueOf(t.Lib[prop])
+			return reflect.ValueOf(t.Lib[prop]), nil
 		case *types.ModuleValue:
-			return t.Enviroment.GetVariable(prop, -1)
+			return t.Enviroment.GetVariable(prop, node.Line)
 		case types.Object:
 			v := reflect.ValueOf(left)
-			return v.MethodByName(string(strings.ToUpper(prop[:1]) + prop[1:]))
+			return v.MethodByName(string(strings.ToUpper(prop[:1]) + prop[1:])), nil
 		case *enviroment.Enviroment:
-			return t.GetVariable(prop, -1)
+			return t.GetVariable(prop, node.Line)
 		default:
-			return t.(map[string]any)[prop]
+			return t.(map[string]any)[prop], nil
 		}
 
 	}
 }
 
-func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) any {
+func EvalAssignmentExpression(node *parser.AssignmentExpression, env *enviroment.Enviroment) (any, error) {
 	switch t := node.Owner.(type) {
 	case *parser.MemberExpression:
-		t.Assign = Interpreter(node.Value, env)
-		Interpreter(t, env)
+		value, err := Interpreter(node.Value, env)
+		if err != nil {
+			return nil, err
+		}
+		t.Assign = value
+		res, err := Interpreter(t, env)
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
 	default:
-		env.AssignmenVariable(node.Owner.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Value, env), node.Line)
+		value, err := Interpreter(node.Value, env)
+		if err != nil {
+			return nil, err
+		}
+		return env.AssignmenVariable(node.Owner.(*parser.IdentifierStatement).Value.(string), value, node.Line), nil
 	}
-	return nil
 }
 
-func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) any {
+func EvalForStatement(node *parser.ForStatement, env *enviroment.Enviroment) (any, error) {
 	// scope := enviroment.NewEnv(env) NOTE: for uchun scope yaratilsa condition xato ishlamoqda to'g'irlash kerak
 	for {
-		condition := Interpreter(node.Condition, env).(types.Object).GetValue().(bool)
+		res, err := Interpreter(node.Condition, env)
+		if err != nil {
+			return nil, err
+		}
+		condition := res.(types.Object).GetValue().(bool)
 		if !condition {
 			break
 		}
-		for _, statement := range node.Body {
-			result := Interpreter(statement, env)
-			if isReturn, response := IsReturn(result); isReturn {
-				return response
-			}
+		res, err, isReturn := EvalBody(node.Body, env)
+		if err != nil {
+			return nil, err
+		}
+		if isReturn {
+			return res, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
-func EvalIfStatement(node *parser.IfStatement, env *enviroment.Enviroment) any {
-	if Interpreter(node.Condition, env).(types.Object).GetValue().(bool) {
-		for _, statement := range node.Body {
-			result := Interpreter(statement, env)
-			if isReturn, response := IsReturn(result); isReturn {
-				return response
-			}
+func EvalIfStatement(node *parser.IfStatement, env *enviroment.Enviroment) (any, error) {
+	condition, err := Interpreter(node.Condition, env)
+	if err != nil {
+		return nil, err
+	}
+	if condition.(types.Object).GetValue().(bool) {
+		res, err, isReturn := EvalBody(node.Body, env)
+		if err != nil {
+			return nil, err
+		}
+		if isReturn {
+			return res, nil
 		}
 		return &types.FlowValue{
 			Catched: true,
 			Type:    types.Flow,
-		}
+		}, nil
 	}
 	for _, child := range node.Childs {
-		result := Interpreter(child, env)
+		child, err := Interpreter(child, env)
+		if err != nil {
+			return nil, err
+		}
+		result := child
 		if result.(*types.FlowValue).Catched {
 			return &types.FlowValue{
 				Catched: true,
 				Type:    types.Flow,
-			}
+			}, nil
 		}
 	}
 	return &types.FlowValue{
 		Catched: false,
 		Type:    types.Flow,
-	}
+	}, nil
 }
 
-func EvalElseIfStatement(node *parser.ElseIfStatement, env *enviroment.Enviroment) any {
-	if Interpreter(node.Condition, env).(types.Object).GetValue().(bool) {
-		for _, statement := range node.Body {
-			result := Interpreter(statement, env)
-			if isReturn, response := IsReturn(result); isReturn {
-				return response
-			}
+func EvalElseIfStatement(node *parser.ElseIfStatement, env *enviroment.Enviroment) (any, error) {
+	condition, err := Interpreter(node.Condition, env)
+	if err != nil {
+		return nil, err
+	}
+	if condition.(types.Object).GetValue().(bool) {
+		res, err, isReturn := EvalBody(node.Body, env)
+		if err != nil {
+			return nil, err
+		}
+		if isReturn {
+			return res, nil
 		}
 		return &types.FlowValue{
 			Type:    types.Flow,
 			Catched: true,
-		}
+		}, nil
 	}
 	return &types.FlowValue{
 		Type:    types.Flow,
 		Catched: false,
-	}
+	}, nil
 }
-func EvalElseStatement(node *parser.ElseStatement, env *enviroment.Enviroment) any {
-	for _, statement := range node.Body {
-		result := Interpreter(statement, env)
-		if isReturn, response := IsReturn(result); isReturn {
-			return response
-		}
+func EvalElseStatement(node *parser.ElseStatement, env *enviroment.Enviroment) (any, error) {
+	res, err, isReturn := EvalBody(node.Body, env)
+	if err != nil {
+		return nil, err
+	}
+	if isReturn {
+		return res, nil
 	}
 	return &types.FlowValue{
 		Catched: true,
 		Type:    types.Flow,
-	}
+	}, nil
 }
 
-func EvalIdentifier(node *parser.IdentifierStatement, env *enviroment.Enviroment) any {
+func EvalIdentifier(node *parser.IdentifierStatement, env *enviroment.Enviroment) (any, error) {
 	name, _ := node.Value.(string)
-	return env.GetVariable(name, -1)
+	return env.GetVariable(name, node.Line)
 }
 
-func EvalFunctionDeclaration(node *parser.FunctionDeclaration, env *enviroment.Enviroment, ownerObject any) any {
+func EvalFunctionDeclaration(node *parser.FunctionDeclaration, env *enviroment.Enviroment, ownerObject any) (any, error) {
 	fn := &types.FunctionDeclaration{
+		Name:        node.Name,
 		Type:        types.Function,
 		Body:        node.Body,
 		Params:      node.Params,
 		OwnerObject: ownerObject,
 		Enviroment:  env,
 	}
-	return env.AssignmenVariable(node.Name, fn, node.Line)
+	return env.AssignmenVariable(node.Name, fn, node.Line), nil
 }
 
-func EvalProgram(node *parser.Program, env *enviroment.Enviroment) any {
-	var lastInterpreted any
+func EvalProgram(node *parser.Program, env *enviroment.Enviroment) (any, error) {
 	for _, statement := range node.Body {
-		lastInterpreted = Interpreter(statement, env)
+		if _, err := Interpreter(statement, env); err != nil {
+			return nil, err
+		}
 	}
-	return lastInterpreted
+	return nil, nil
 }
 
-func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Enviroment) any {
+func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Enviroment) (any, error) {
 	if utils.InArray(node.Operator, []any{"&&", "||"}) {
 		var value bool
-		left := Interpreter(node.Left, env).(types.Object).GetValue().(bool)
-		right := Interpreter(node.Right, env).(types.Object).GetValue().(bool)
+		res, err := Interpreter(node.Left, env)
+		if err != nil {
+			return nil, err
+		}
+		left := res.(types.Object).GetValue().(bool)
+		res, err = Interpreter(node.Right, env)
+		if err != nil {
+			return nil, err
+		}
+		right := res.(types.Object).GetValue().(bool)
 		switch node.Operator {
 		case "&&":
 			value = left && right
 		case "||":
 			value = left || right
 		}
-		return types.NewBool(value)
+		return types.NewBool(value), nil
 	} else {
 		var left, right float64
-		leftValue := Interpreter(node.Left, env)
-		rightValue := Interpreter(node.Right, env)
+		res, err := Interpreter(node.Left, env)
+		if err != nil {
+			return nil, err
+		}
+		leftValue := res
+		res, err = Interpreter(node.Right, env)
+		if err != nil {
+			return nil, err
+		}
+		rightValue := res
 
 		if leftValue != 0 {
 			left, _ = utils.Int2Float(leftValue.(types.Object).GetValue())
@@ -388,10 +507,10 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 			_, isRightFloat := rightValue.(*types.FloatValue)
 			_, isLeftFloat := leftValue.(*types.FloatValue)
 			if isLeftFloat || isRightFloat {
-				return types.NewFloat(value.(float64))
+				return types.NewFloat(value.(float64)), nil
 			}
 			v, _ := utils.Float2Int(value)
-			return types.NewInt(v)
+			return types.NewInt(v), nil
 		} else if utils.InArray(node.Operator, []any{"==", ">=", "<=", "!=", ">", "<"}) {
 			var value bool
 			switch node.Operator {
@@ -408,11 +527,11 @@ func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Envirom
 			case "<":
 				value = left < right
 			}
-			return types.NewBool(value)
+			return types.NewBool(value), nil
 		}
 
 	}
-	return nil
+	return nil, nil
 }
 
 func IsReturn(result any) (bool, any) {
@@ -423,13 +542,21 @@ func IsReturn(result any) (bool, any) {
 	return false, nil
 }
 
-func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) any {
+func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) (any, error) {
 	scope := enviroment.NewEnv(env)
 	var args []any
 	for _, arg := range node.Args {
-		args = append(args, Interpreter(arg, scope))
+		a, err := Interpreter(arg, scope)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, a)
 	}
-	switch v := Interpreter(node.Caller, scope).(type) {
+	caller, err := Interpreter(node.Caller, scope)
+	if err != nil {
+		return nil, err
+	}
+	switch v := caller.(type) {
 	case *types.NativeFunctionValue:
 		fun := reflect.ValueOf(v.Call)
 		callArgs := make([]reflect.Value, len(args))
@@ -438,39 +565,48 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 		}
 		out := fun.Call(callArgs)
 		if len(out) >= 1 {
-			return out[0].Interface()
+			return out[0].Interface(), nil
 		}
-		return types.NewNull()
+		return types.NewNull(), nil
 	case *types.FunctionDeclaration:
+		if len(v.Params) != len(node.Args) {
+			return nil, fmt.Errorf("%s funcsiyasi parametri xato berildi funcsiya kutmoqda: %d berildi: %d line: %d", v.Name, len(v.Params), len(node.Args), node.Line)
+		}
 		var result any
 		scope = v.Enviroment
-		scope.AssignmenVariable("this", v.OwnerObject, -1)
+		scope.AssignmenVariable("this", v.OwnerObject, node.Line)
 		scope.AssignmenVariable("super", &types.NativeFunctionValue{
 			Call: func(value *parser.ClassDeclaration) any {
 				return v.OwnerObject.(*types.ObjectValue).Extends[value.Name.(*parser.IdentifierStatement).Value.(string)]
 			},
-		}, -1)
+		}, node.Line)
 		for index, name := range v.Params {
-			scope.AssignmenVariable(name.(*parser.IdentifierStatement).Value.(string), Interpreter(node.Args[index], env), -1)
-		}
-		for _, statement := range v.Body {
-			result = Interpreter(statement, scope)
-			if isReturn, response := IsReturn(result); isReturn {
-				return response.(*types.ReturnValue).Value
+			param, err := Interpreter(node.Args[index], env)
+			if err != nil {
+				return nil, err
 			}
+			scope.AssignmenVariable(name.(*parser.IdentifierStatement).Value.(string), param, node.Line)
 		}
-		return result
+		res, err, isReturn := EvalBody(v.Body, scope)
+		if err != nil {
+			return nil, err
+		}
+		if isReturn {
+			return res.(*types.ReturnValue).Value, nil
+		}
+
+		return result, nil
 	case reflect.Value:
 		callArgs := make([]reflect.Value, len(args))
 		for i, arg := range args {
 			callArgs[i] = reflect.ValueOf(arg)
 		}
 		if res := v.Call(callArgs); len(res) >= 1 {
-			return res[0].Interface()
+			return res[0].Interface(), nil
 		}
-		return nil
+		return nil, nil
 	default:
 		pp.Print(v)
 	}
-	return nil
+	return nil, nil
 }

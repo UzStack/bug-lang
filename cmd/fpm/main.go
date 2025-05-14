@@ -70,8 +70,9 @@ func Worker(jobs <-chan Job) {
 		env.AssignmenVariable("_GET", services.ParseGetData(request), -1)
 		env.AssignmenVariable("_REQUEST", services.ParseRequest(request), -1)
 		env.AssignmenVariable("_GLOBALS", services.ParseGlobals(request), -1)
-
-		runtime.Interpreter(ast, env)
+		if _, err := runtime.Interpreter(ast, env); err != nil {
+			fmt.Println(err)
+		}
 		job.Response <- Result{
 			Body:    buf.String(),
 			Headers: headers,
