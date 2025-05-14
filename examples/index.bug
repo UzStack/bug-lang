@@ -66,3 +66,5 @@ for (i < numbers.size()){
     println(math.round(numbers[i], 2));
     i = i + 1;
 }
+
+println("salom\r\nqalaysan")
