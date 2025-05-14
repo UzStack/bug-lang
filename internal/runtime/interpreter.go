@@ -202,7 +202,11 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 				t.Values[name.GetValue().(string)] = node.Assign
 			}
 			index, _ := Interpreter(node.Prop, env).(types.Object).GetValue().(string)
-			return t.Values[index]
+			response, ok := t.Values[index]
+			if !ok {
+				fmt.Printf("Map item not found: %s", index)
+			}
+			return response
 		default:
 			return nil
 		}

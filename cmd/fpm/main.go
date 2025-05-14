@@ -21,6 +21,7 @@ type Job struct {
 	File     string
 	Response chan Result
 	Request  *http.Request
+	BaseDir  string
 }
 
 type Result struct {
@@ -45,7 +46,7 @@ func Worker(jobs <-chan Job) {
 		}
 		tokenize := lexar.NewTokenize()
 		tokens := tokenize.Tokenize(string(code))
-		parser := parser.NewParser(tokens)
+		parser := parser.NewParser(tokens, job.BaseDir)
 		ast := parser.CreateAST()
 		env := enviroment.NewGlobalEnv()
 		std.Load(env)
@@ -85,7 +86,7 @@ func handler(w http.ResponseWriter, r *http.Request, jobs chan<- Job) {
 	file := params["DOCUMENT_ROOT"] + params["DOCUMENT_URI"]
 	result := make(chan Result)
 	// Faylni workerga yuborish
-	jobs <- Job{File: file, Response: result, Request: r}
+	jobs <- Job{File: file, Response: result, Request: r, BaseDir: params["DOCUMENT_ROOT"] + "/"}
 	res := <-result
 	for _, header := range res.Headers {
 		w.Header().Set(header.Key, header.Value)

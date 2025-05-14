@@ -33,7 +33,7 @@ func main() {
 	}
 	tokenize := lexar.NewTokenize()
 	tokens := tokenize.Tokenize(string(code))
-	parser := parser.NewParser(tokens)
+	parser := parser.NewParser(tokens, "")
 	ast := parser.CreateAST()
 	env := enviroment.NewGlobalEnv()
 	std.Load(env)
