@@ -1,6 +1,8 @@
 package lexar
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/UzStack/bug-lang/pkg/utils"
@@ -65,6 +67,10 @@ func (t *tokenize) FindString() {
 	var str string
 	for t.At() != "\"" || t.Chars[t.Index-1] == "\\" {
 		str += t.Next()
+	}
+	str, err := strconv.Unquote("\"" + str + "\"")
+	if err != nil {
+		panic(fmt.Sprintf("string unquote error: %s", err.Error()))
 	}
 	t.token(str, String)
 	t.Index++
