@@ -12,14 +12,16 @@ import (
 )
 
 type parser struct {
-	Tokens []*lexar.Token
-	Index  int
+	Tokens  []*lexar.Token
+	Index   int
+	BaseDir string
 }
 
-func NewParser(tokens []*lexar.Token) *parser {
+func NewParser(tokens []*lexar.Token, baseDir string) *parser {
 	return &parser{
-		Tokens: tokens,
-		Index:  0,
+		Tokens:  tokens,
+		Index:   0,
+		BaseDir: baseDir,
 	}
 }
 func (p parser) At() *lexar.Token {
@@ -468,7 +470,7 @@ func (p *parser) ParseImportStatement() any {
 			}
 			return data, nil
 		}
-		if !utils.FileExists(path+".bug") && !utils.IsDirectory(path) {
+		if !utils.FileExists(p.BaseDir+path+".bug") && !utils.IsDirectory(p.BaseDir+path) {
 			packagePath := "./packages/" + path
 			if utils.FileExists(packagePath) {
 				path = packagePath
@@ -484,10 +486,10 @@ func (p *parser) ParseImportStatement() any {
 				}
 			}
 		}
-		if utils.IsDirectory(path) {
+		if utils.IsDirectory(p.BaseDir + path) {
 			path = path + "/init"
 		}
-		code, err := os.ReadFile(path + ".bug")
+		code, err := os.ReadFile(p.BaseDir + path + ".bug")
 		if err != nil {
 			panic("Error reading code: " + err.Error())
 		}
@@ -496,7 +498,7 @@ func (p *parser) ParseImportStatement() any {
 	}
 	tokenizer := lexar.NewTokenize()
 	tokens := tokenizer.Tokenize(string(readCode(path)))
-	parser := NewParser(tokens)
+	parser := NewParser(tokens, p.BaseDir)
 	program := &Module{
 		Line: p.At().Line,
 		Name: name,
