@@ -267,7 +267,7 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 			index, _ := prop.(types.Object).GetValue().(string)
 			response, ok := t.Values[index]
 			if !ok {
-				fmt.Printf("Map item not found: %s", index)
+				return nil, fmt.Errorf("map item not found: %s", index)
 			}
 			return response, nil
 		default:
@@ -452,86 +452,121 @@ func EvalProgram(node *parser.Program, env *enviroment.Enviroment) (any, error) 
 }
 
 func EvalBinaryExpression(node *parser.BinaryExpression, env *enviroment.Enviroment) (any, error) {
-	if utils.InArray(node.Operator, []any{"&&", "||"}) {
-		var value bool
-		res, err := Interpreter(node.Left, env)
-		if err != nil {
-			return nil, err
-		}
-		left := res.(types.Object).GetValue().(bool)
-		res, err = Interpreter(node.Right, env)
-		if err != nil {
-			return nil, err
-		}
-		right := res.(types.Object).GetValue().(bool)
-		switch node.Operator {
-		case "&&":
-			value = left && right
-		case "||":
-			value = left || right
-		}
-		return types.NewBool(value), nil
-	} else {
-		var left, right float64
-		res, err := Interpreter(node.Left, env)
-		if err != nil {
-			return nil, err
-		}
-		leftValue := res
-		res, err = Interpreter(node.Right, env)
-		if err != nil {
-			return nil, err
-		}
-		rightValue := res
+	leftRes, err := Interpreter(node.Left, env)
+	if err != nil {
+		return nil, err
+	}
+	rightRes, err := Interpreter(node.Right, env)
+	if err != nil {
+		return nil, err
+	}
 
-		if leftValue != 0 {
-			left, _ = utils.Int2Float(leftValue.(types.Object).GetValue())
+	leftVal := leftRes.(types.Object).GetValue()
+	rightVal := rightRes.(types.Object).GetValue()
+
+	leftKind := reflect.TypeOf(leftVal).Kind()
+	rightKind := reflect.TypeOf(rightVal).Kind()
+
+	switch node.Operator {
+	case "&&", "||":
+		leftBool, ok1 := leftVal.(bool)
+		rightBool, ok2 := rightVal.(bool)
+		if !ok1 || !ok2 {
+			return nil, fmt.Errorf("invalid types for logical operation: %T, %T", leftVal, rightVal)
 		}
-		if rightValue != 0 {
-			right, _ = utils.Int2Float(rightValue.(types.Object).GetValue())
+		var result bool
+		if node.Operator == "&&" {
+			result = leftBool && rightBool
+		} else {
+			result = leftBool || rightBool
 		}
-		if utils.InArray(node.Operator, []any{"+", "-", "*", "/"}) {
-			var value any
-			switch node.Operator {
-			case "+":
-				value = left + right
-			case "-":
-				value = left - right
-			case "*":
-				value = left * right
-			case "/":
-				value = left / right
-			case "%":
-				value = int(left) % int(right)
+		return types.NewBool(result), nil
+
+	case "+", "-", "*", "/", "%":
+		// String qo‘shish
+		if node.Operator == "+" && (leftKind == reflect.String || rightKind == reflect.String) {
+			return types.NewString(fmt.Sprintf("%v%v", leftVal, rightVal)), nil
+		}
+
+		// Arifmetik amallar
+		leftFloat, err := utils.Int2Float(leftVal)
+		if err != nil {
+			return nil, err
+		}
+		rightFloat, err := utils.Int2Float(rightVal)
+		if err != nil {
+			return nil, err
+		}
+
+		var result any
+		switch node.Operator {
+		case "+":
+			result = leftFloat + rightFloat
+		case "-":
+			result = leftFloat - rightFloat
+		case "*":
+			result = leftFloat * rightFloat
+		case "/":
+			if rightFloat == 0 {
+				return nil, fmt.Errorf("division by zero")
 			}
-			_, isRightFloat := rightValue.(*types.FloatValue)
-			_, isLeftFloat := leftValue.(*types.FloatValue)
-			if isLeftFloat || isRightFloat {
-				return types.NewFloat(value.(float64)), nil
+			result = leftFloat / rightFloat
+		case "%":
+			result = int(leftFloat) % int(rightFloat)
+		}
+
+		// Float yoki int aniqlash
+		if leftKind == reflect.Float64 || rightKind == reflect.Float64 || node.Operator == "/" {
+			return types.NewFloat(result.(float64)), nil
+		}
+		intVal, _ := utils.Float2Int(result)
+		return types.NewInt(intVal), nil
+
+	case "==", "!=", ">", "<", ">=", "<=":
+		// Turli tiplardagi solishtirishlar
+		switch left := leftVal.(type) {
+		case string:
+			right, ok := rightVal.(string)
+			if !ok {
+				return nil, fmt.Errorf("type mismatch in comparison: %T and %T", leftVal, rightVal)
 			}
-			v, _ := utils.Float2Int(value)
-			return types.NewInt(v), nil
-		} else if utils.InArray(node.Operator, []any{"==", ">=", "<=", "!=", ">", "<"}) {
-			var value bool
 			switch node.Operator {
 			case "==":
-				value = left == right
-			case ">=":
-				value = left >= right
-			case "<=":
-				value = left <= right
+				return types.NewBool(left == right), nil
 			case "!=":
-				value = left != right
+				return types.NewBool(left != right), nil
 			case ">":
-				value = left > right
+				return types.NewBool(left > right), nil
 			case "<":
-				value = left < right
+				return types.NewBool(left < right), nil
+			case ">=":
+				return types.NewBool(left >= right), nil
+			case "<=":
+				return types.NewBool(left <= right), nil
 			}
-			return types.NewBool(value), nil
+		case float64, int:
+			lv, _ := utils.Int2Float(leftVal)
+			rv, _ := utils.Int2Float(rightVal)
+			switch node.Operator {
+			case "==":
+				return types.NewBool(lv == rv), nil
+			case "!=":
+				return types.NewBool(lv != rv), nil
+			case ">":
+				return types.NewBool(lv > rv), nil
+			case "<":
+				return types.NewBool(lv < rv), nil
+			case ">=":
+				return types.NewBool(lv >= rv), nil
+			case "<=":
+				return types.NewBool(lv <= rv), nil
+			}
+		default:
+			return nil, fmt.Errorf("unsupported types for comparison: %T", leftVal)
 		}
-
 	}
-	return nil, nil
+
+	return nil, fmt.Errorf("unsupported operator: %s", node.Operator)
 }
 
 func IsReturn(result any) (bool, any) {

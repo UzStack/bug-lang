@@ -42,10 +42,18 @@ func Worker(jobs <-chan Job) {
 			job.Response <- Result{
 				Body: fmt.Sprintf("Error reading file %s: %v", job.File, err),
 			}
+			close(job.Response)
 			continue
 		}
 		tokenize := lexar.NewTokenize()
-		tokens := tokenize.Tokenize(string(code))
+		tokens, err := tokenize.Tokenize(string(code))
+		if err != nil {
+			job.Response <- Result{
+				Body: err.Error(),
+			}
+			close(job.Response)
+			continue
+		}
 		parser := parser.NewParser(tokens, job.BaseDir)
 		ast := parser.CreateAST()
 		env := enviroment.NewGlobalEnv()
@@ -70,8 +78,13 @@ func Worker(jobs <-chan Job) {
 		env.AssignmenVariable("_GET", services.ParseGetData(request), -1)
 		env.AssignmenVariable("_REQUEST", services.ParseRequest(request), -1)
 		env.AssignmenVariable("_GLOBALS", services.ParseGlobals(request), -1)
-
-		runtime.Interpreter(ast, env)
+		if _, err := runtime.Interpreter(ast, env); err != nil {
+			fmt.Println(err.Error())
+			job.Response <- Result{
+				Body: err.Error(),
+			}
+			continue
+		}
 		job.Response <- Result{
 			Body:    buf.String(),
 			Headers: headers,
