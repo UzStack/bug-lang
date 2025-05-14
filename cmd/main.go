@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"runtime/pprof"
 
@@ -37,5 +38,7 @@ func main() {
 	ast := parser.CreateAST()
 	env := enviroment.NewGlobalEnv()
 	std.Load(env)
-	runtime.Interpreter(ast, env)
+	if _, err := runtime.Interpreter(ast, env); err != nil {
+		fmt.Println(err)
+	}
 }
