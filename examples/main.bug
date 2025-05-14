@@ -1,0 +1,11 @@
+import "examples.routes.routes";
+import "json";
+
+routes = new routes.Routes();
+
+func test(){
+    return {"detail": "ok"}
+}
+
+routes.register("test", test);
+print(json.encode(routes.list()["test"]()));

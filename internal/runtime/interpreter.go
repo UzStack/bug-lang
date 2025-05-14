@@ -202,7 +202,11 @@ func EvalMemberExpression(node *parser.MemberExpression, env *enviroment.Envirom
 				t.Values[name.GetValue().(string)] = node.Assign
 			}
 			index, _ := Interpreter(node.Prop, env).(types.Object).GetValue().(string)
-			return t.Values[index]
+			response, ok := t.Values[index]
+			if !ok {
+				fmt.Printf("Map item not found: %s", index)
+			}
+			return response
 		default:
 			return nil
 		}
@@ -425,7 +429,6 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 	for _, arg := range node.Args {
 		args = append(args, Interpreter(arg, scope))
 	}
-
 	switch v := Interpreter(node.Caller, scope).(type) {
 	case *types.NativeFunctionValue:
 		fun := reflect.ValueOf(v.Call)

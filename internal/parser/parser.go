@@ -12,14 +12,16 @@ import (
 )
 
 type parser struct {
-	Tokens []*lexar.Token
-	Index  int
+	Tokens  []*lexar.Token
+	Index   int
+	BaseDir string
 }
 
-func NewParser(tokens []*lexar.Token) *parser {
+func NewParser(tokens []*lexar.Token, baseDir string) *parser {
 	return &parser{
-		Tokens: tokens,
-		Index:  0,
+		Tokens:  tokens,
+		Index:   0,
+		BaseDir: baseDir,
 	}
 }
 func (p parser) At() *lexar.Token {
@@ -136,6 +138,7 @@ func (p *parser) ParseMapItems() map[string]any {
 	items := make(map[string]any)
 	p.Except(lexar.OpenBrace, "Except open brace Object")
 	if p.At().Type == lexar.CloseBrace {
+		p.Next()
 		return items
 	}
 	for p.At().Type != lexar.CloseBrace {
@@ -319,22 +322,15 @@ func (p *parser) ParseBody() []any {
 }
 
 func (p *parser) ParseComputedMember() any {
-	left := p.ParseCallMemberExpression()
+	left := p.ParseCallMemberExpression(nil)
 	for p.At().Type == lexar.OpenBracket {
-		p.Next()
-		left = &MemberExpression{
-			Line:     p.At().Line,
-			Left:     p.ParseMemberExpression(left),
-			Prop:     p.ParseAssignmentExpression(),
-			Computed: true,
-		}
-		p.Except(lexar.CloseBracket, "Excep close bracket computed member")
+		left = p.ParseCallMemberExpression(left)
 	}
 	return left
 }
 
-func (p *parser) ParseCallMemberExpression() any {
-	member := p.ParseMemberExpression(nil)
+func (p *parser) ParseCallMemberExpression(left any) any {
+	member := p.ParseMemberExpression(left)
 	if p.At().Type == lexar.OpenParen {
 		return p.ParseCallExpression(member)
 	}
@@ -345,7 +341,6 @@ func (p *parser) ParseMemberExpression(left any) any {
 	if left == nil {
 		left = p.ParsePrimaryExpression()
 	}
-
 	if p.At().Type == lexar.OpenParen {
 		left = p.ParseCallExpression(left)
 	}
@@ -475,7 +470,7 @@ func (p *parser) ParseImportStatement() any {
 			}
 			return data, nil
 		}
-		if !utils.FileExists(path+".bug") && !utils.IsDirectory(path) {
+		if !utils.FileExists(p.BaseDir+path+".bug") && !utils.IsDirectory(p.BaseDir+path) {
 			packagePath := "./packages/" + path
 			if utils.FileExists(packagePath) {
 				path = packagePath
@@ -491,10 +486,10 @@ func (p *parser) ParseImportStatement() any {
 				}
 			}
 		}
-		if utils.IsDirectory(path) {
+		if utils.IsDirectory(p.BaseDir + path) {
 			path = path + "/init"
 		}
-		code, err := os.ReadFile(path + ".bug")
+		code, err := os.ReadFile(p.BaseDir + path + ".bug")
 		if err != nil {
 			panic("Error reading code: " + err.Error())
 		}
@@ -503,7 +498,7 @@ func (p *parser) ParseImportStatement() any {
 	}
 	tokenizer := lexar.NewTokenize()
 	tokens := tokenizer.Tokenize(string(readCode(path)))
-	parser := NewParser(tokens)
+	parser := NewParser(tokens, p.BaseDir)
 	program := &Module{
 		Line: p.At().Line,
 		Name: name,
