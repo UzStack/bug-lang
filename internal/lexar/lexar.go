@@ -64,10 +64,6 @@ func (t *tokenize) At() string {
 func (t *tokenize) FindString() {
 	var str string
 	for t.At() != "\"" || t.Chars[t.Index-1] == "\\" {
-		if t.At() == "\\" && t.Chars[t.Index+1] == "\"" {
-			t.Next()
-			continue
-		}
 		str += t.Next()
 	}
 	t.token(str, String)
@@ -75,7 +71,7 @@ func (t *tokenize) FindString() {
 }
 
 func (t *tokenize) FindEnd() {
-	for t.At() != ";" {
+	for len(t.Chars) != t.Index+1 && t.At() != ";" {
 		t.Next()
 	}
 	t.Next()
@@ -96,7 +92,7 @@ func (t *tokenize) Tokenize(code string) []*Token {
 			t.FindString()
 			continue
 		}
-		if char == "#" {
+		if char == "/" && t.Chars[t.Index] == "/" {
 			t.Handle()
 			t.FindEnd()
 			continue

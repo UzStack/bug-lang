@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/UzStack/bug-lang/internal/runtime/std/libs"
@@ -44,7 +45,11 @@ func Pprint(buf *bytes.Buffer, values ...any) {
 	for _, val := range values {
 		switch v := val.(type) {
 		case *types.StringValue:
-			fmt.Fprint(buf, v.GetValue())
+			str, err := strconv.Unquote("\"" + v.GetValue().(string) + "\"")
+			if err != nil {
+				panic(err.Error())
+			}
+			fmt.Fprint(buf, str)
 		case *types.IntValue:
 			fmt.Fprint(buf, v.GetValue())
 		case *types.FloatValue:
