@@ -1,11 +1,6 @@
+import "requests";
+import "json";
 
-
-
-class Test(){
-    func init(){
-        this.name = {};
-    }
-}
-
-t = new Test();
-print(t.name);
+println(requests.request("POST", "https://blog.jscorp.uz/api/project/?page=1", json.encode({
+    "name": "Samandar",
+})));

@@ -25,6 +25,9 @@ var STDLIBS = map[string]map[string]any{
 		"encode": libs.JsonEncode,
 		"decode": libs.JsonDecode,
 	},
+	"requests": {
+		"request": libs.Request,
+	},
 }
 
 func QuotationMark(value any) bool {
