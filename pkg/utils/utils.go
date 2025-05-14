@@ -102,7 +102,7 @@ func DecodeBug(data any) any {
 	case reflect.Map:
 		response := types.NewMap(make(map[string]any)).(*types.MapValue)
 		for key, value := range data.(map[string]any) {
-			response.Add(key, DecodeBug(value))
+			response.Add(types.NewString(key), DecodeBug(value))
 		}
 		return response
 	case reflect.Slice:

@@ -136,6 +136,7 @@ func (p *parser) ParseMapItems() map[string]any {
 	items := make(map[string]any)
 	p.Except(lexar.OpenBrace, "Except open brace Object")
 	if p.At().Type == lexar.CloseBrace {
+		p.Next()
 		return items
 	}
 	for p.At().Type != lexar.CloseBrace {
@@ -319,22 +320,15 @@ func (p *parser) ParseBody() []any {
 }
 
 func (p *parser) ParseComputedMember() any {
-	left := p.ParseCallMemberExpression()
+	left := p.ParseCallMemberExpression(nil)
 	for p.At().Type == lexar.OpenBracket {
-		p.Next()
-		left = &MemberExpression{
-			Line:     p.At().Line,
-			Left:     p.ParseMemberExpression(left),
-			Prop:     p.ParseAssignmentExpression(),
-			Computed: true,
-		}
-		p.Except(lexar.CloseBracket, "Excep close bracket computed member")
+		left = p.ParseCallMemberExpression(left)
 	}
 	return left
 }
 
-func (p *parser) ParseCallMemberExpression() any {
-	member := p.ParseMemberExpression(nil)
+func (p *parser) ParseCallMemberExpression(left any) any {
+	member := p.ParseMemberExpression(left)
 	if p.At().Type == lexar.OpenParen {
 		return p.ParseCallExpression(member)
 	}
@@ -345,7 +339,6 @@ func (p *parser) ParseMemberExpression(left any) any {
 	if left == nil {
 		left = p.ParsePrimaryExpression()
 	}
-
 	if p.At().Type == lexar.OpenParen {
 		left = p.ParseCallExpression(left)
 	}
