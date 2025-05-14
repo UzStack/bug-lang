@@ -35,15 +35,15 @@ func (e *Enviroment) AssignmenVariable(name string, value any, line int) any {
 	return value
 }
 
-func (e *Enviroment) GetVariable(name string, line int) any {
+func (e *Enviroment) GetVariable(name string, line int) (any, error) {
 	res, ok := e.Variables[name]
 	if !ok {
 		if e.Owner != nil {
 			return e.Owner.GetVariable(name, line)
 		}
 		if !ok {
-			panic(fmt.Sprintf("O'zgaruvchi topilmadi %s Line: %d", name, line))
+			return nil, fmt.Errorf("o'zgaruvchi topilmadi %s Line: %d", name, line)
 		}
 	}
-	return res
+	return res, nil
 }

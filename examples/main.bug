@@ -1,11 +1,11 @@
 import "examples.routes.routes";
 import "json";
 
-routes = new routes.Routes();
+r = new routes.Routes();
 
 func test(){
     return {"detail": "ok"}
 }
 
-routes.register("test", test);
-print(json.encode(routes.list()["test"]()));
+r.register("test", test, 10);
+print(json.encode(r.list()["test"]()));
