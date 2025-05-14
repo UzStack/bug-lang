@@ -425,7 +425,6 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) a
 	for _, arg := range node.Args {
 		args = append(args, Interpreter(arg, scope))
 	}
-
 	switch v := Interpreter(node.Caller, scope).(type) {
 	case *types.NativeFunctionValue:
 		fun := reflect.ValueOf(v.Call)

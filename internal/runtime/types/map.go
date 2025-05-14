@@ -14,7 +14,7 @@ func (a *MapValue) GetValue() any {
 	return a.Values
 }
 
-func (a *MapValue) Add(key string, value any) any {
-	a.Values[key] = value
+func (a *MapValue) Add(key *StringValue, value any) any {
+	a.Values[key.GetValue().(string)] = value
 	return nil
 }

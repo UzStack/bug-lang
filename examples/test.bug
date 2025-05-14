@@ -1,6 +1,11 @@
-import "ffi";
 
 
-name = "Samandar";
-module = ffi.load("./ffi/test/test.so");
-println(ffi.call(module, "Test", []));
+
+class Test(){
+    func init(){
+        this.name = {};
+    }
+}
+
+t = new Test();
+print(t.name);
