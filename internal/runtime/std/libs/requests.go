@@ -30,7 +30,14 @@ func Request(method *types.StringValue, url *types.StringValue, p types.Object) 
 	if err != nil {
 		panic(err.Error())
 	}
+	return types.NewMap(map[string]any{
+		"body":  body,
+		"error": err,
+	})
+}
+
+func Json(response types.Object) any {
 	var data any
-	json.Unmarshal(body, &data)
+	json.Unmarshal(response.GetValue().(map[string]any)["body"].([]byte), &data)
 	return utils.DecodeBug(data)
 }

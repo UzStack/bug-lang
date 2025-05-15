@@ -30,7 +30,7 @@ var STDLIBS = []any{
 	"math",
 	"ffi",
 	"json",
-	"requests",
+	"requestsgo",
 }
 
 type Statement struct {

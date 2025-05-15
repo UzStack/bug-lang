@@ -25,8 +25,9 @@ var STDLIBS = map[string]map[string]any{
 		"encode": libs.JsonEncode,
 		"decode": libs.JsonDecode,
 	},
-	"requests": {
+	"requestsgo": {
 		"request": libs.Request,
+		"json":    libs.Json,
 	},
 }
 

@@ -1,6 +1,5 @@
 import "requests";
-import "json";
 
-println(requests.request("POST", "https://blog.jscorp.uz/api/project/?page=1", json.encode({
-    "name": "Samandar",
-})));
+response = requests.request("POST", "https://blog.jscorp.uz/api/project/?page=1", null);
+
+print(response.json());

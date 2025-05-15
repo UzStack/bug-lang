@@ -1,0 +1,23 @@
+import "requestsgo";
+
+
+
+class Client(){
+    func init(){
+        this.response = null;
+    }
+
+    func request(method, url, payload){
+        this.response = requestsgo.request(method, url, payload);
+        return this;
+    }
+    func json(){
+        return requestsgo.json(this.response);
+    }
+}
+
+
+func request(method, url, payload){
+    client = new Client();
+    return client.request(method, url, payload);
+}
