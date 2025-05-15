@@ -1,5 +1,5 @@
 import "requests";
 
-response = requests.request("POST", "https://blog.jscorp.uz/api/project/?page=1", null);
+response = requests.request("POST", "https://blog.jscorp.uz/api/project/?page=1");
 
 print(response.json());
