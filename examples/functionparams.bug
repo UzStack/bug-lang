@@ -1,0 +1,9 @@
+
+
+func test(param1, param2 = "salom") {
+    println(param1);
+    println(param2);
+}
+
+
+test("test1", "name");

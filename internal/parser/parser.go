@@ -429,11 +429,12 @@ func (p *parser) ParseFnDeclaration() *FunctionDeclaration {
 	args := p.ParseArgs()
 	var params []any
 	for _, arg := range args {
-		param, ok := arg.(*IdentifierStatement)
-		if !ok {
+		switch arg.(type) {
+		case *IdentifierStatement, *AssignmentExpression:
+			params = append(params, arg)
+		default:
 			log.Fatal("Funcsiya parametri nato'g'ri")
 		}
-		params = append(params, param)
 	}
 	return &FunctionDeclaration{
 		Line:   p.At().Line,

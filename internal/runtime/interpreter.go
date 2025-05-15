@@ -604,9 +604,9 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) (
 		}
 		return types.NewNull(), nil
 	case *types.FunctionDeclaration:
-		if len(v.Params) != len(node.Args) {
-			return nil, fmt.Errorf("%s funcsiyasi parametri xato berildi funcsiya kutmoqda: %d berildi: %d line: %d", v.Name, len(v.Params), len(node.Args), node.Line)
-		}
+		// if len(v.Params) != len(node.Args) {
+		// 	return nil, fmt.Errorf("%s funcsiyasi parametri xato berildi funcsiya kutmoqda: %d berildi: %d line: %d", v.Name, len(v.Params), len(node.Args), node.Line)
+		// }
 		var result any
 		scope = v.Enviroment
 		scope.AssignmenVariable("this", v.OwnerObject, node.Line)
@@ -615,12 +615,25 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) (
 				return v.OwnerObject.(*types.ObjectValue).Extends[value.Name.(*parser.IdentifierStatement).Value.(string)]
 			},
 		}, node.Line)
-		for index, name := range v.Params {
-			param, err := Interpreter(node.Args[index], env)
-			if err != nil {
-				return nil, err
+		for index, arg := range v.Params {
+			var name string
+			switch v := arg.(type) {
+			case *parser.AssignmentExpression:
+				if _, err := Interpreter(arg, scope); err != nil {
+					return nil, err
+				}
+				name = v.Owner.(*parser.IdentifierStatement).Value.(string)
+			case *parser.IdentifierStatement:
+				name = v.Value.(string)
 			}
-			scope.AssignmenVariable(name.(*parser.IdentifierStatement).Value.(string), param, node.Line)
+			if len(node.Args) > index {
+				param, err := Interpreter(node.Args[index], env)
+				if err != nil {
+					return nil, err
+				}
+				scope.AssignmenVariable(name, param, node.Line)
+			}
+
 		}
 		res, err, isReturn := EvalBody(v.Body, scope)
 		if err != nil {
