@@ -2,30 +2,6 @@ package parser
 
 import "github.com/UzStack/bug-lang/internal/runtime/enviroment"
 
-type NodeType string
-
-const (
-	VariableDeclarationNode  NodeType = "VariableDeclaration"
-	FunctionDeclarationNode  NodeType = "FunctionDeclaration"
-	CallStatementNode        NodeType = "CallStatement"
-	CallerNode               NodeType = "Caller"
-	ProgramNode              NodeType = "Program"
-	StringLiteralNode        NodeType = "StringLiteral"
-	IdentifierNode           NodeType = "Identifier"
-	NumberLiteralNode        NodeType = "NumberLiteral"
-	BinaryOperatorNode       NodeType = "BinaryOperator"
-	IfStatementNode          NodeType = "IfStatement"
-	ElseIfStatementNode      NodeType = "ElseIfStatement"
-	ElseStatementNode        NodeType = "ElseStatement"
-	ForNode                  NodeType = "For"
-	AssignmentExpressionNode NodeType = "AssignmentExpression"
-	ReturnNode               NodeType = "Return"
-	ArrayNode                NodeType = "Array"
-	MemberNode               NodeType = "Member"
-	MapNode                  NodeType = "Map"
-	ObjectNode               NodeType = "ObjectNode"
-)
-
 var STDLIBS = []any{
 	"math",
 	"ffi",
@@ -34,7 +10,6 @@ var STDLIBS = []any{
 }
 
 type Statement struct {
-	Kind NodeType
 	Line int
 }
 
@@ -42,41 +17,41 @@ type Expression struct {
 	Line int
 }
 
-type Program struct {
+type ProgramNode struct {
 	Body []any
 	Line int
 }
-type Module struct {
+type ModuleNode struct {
 	Line int
 	Name string
 	Body []any
 	Path string
 }
 
-type StdModule struct {
+type StdModuleNode struct {
 	Line int
 	Name string
 	Path string
 }
 
-type BinaryExpression struct {
+type BinaryNode struct {
 	Line     int
 	Left     any
 	Right    any
 	Operator any
 }
 
-type IdentifierStatement struct {
+type IdentifierNode struct {
 	Line  int
 	Value any
 }
 
-type BaseStatement struct {
+type BaseNode struct {
 	Line int
 }
 
 // Call Statement
-type CallStatement struct {
+type CallNode struct {
 	Line   int
 	Caller any
 	Value  any
@@ -84,85 +59,85 @@ type CallStatement struct {
 }
 
 // Variable Declatation
-type VariableDeclaration struct {
+type VariableDeclarationNode struct {
 	Line  int
 	Name  string
 	Value any
 }
 
-type Caller struct {
+type CallerNode struct {
 	Line int
 	Name string
 }
 
-type NumberLiteral struct {
+type NumberLiteralNode struct {
 	Line  int
 	Value any
 }
-type FloatLiteral struct {
-	Line  int
-	Value any
-}
-
-type StringLiteral struct {
+type FloatLiteralNode struct {
 	Line  int
 	Value any
 }
 
-type FunctionDeclaration struct {
+type StringLiteralNode struct {
+	Line  int
+	Value any
+}
+
+type FunctionDeclarationNode struct {
 	Line   int
 	Name   string
 	Params []any
 	Body   []any
 }
 
-type IfStatement struct {
+type IfNode struct {
 	Line      int
 	Condition any
 	Body      []any
 	Childs    []any
 }
 
-type ElseIfStatement struct {
+type ElseIfNode struct {
 	Line      int
 	Condition any
 	Body      []any
 }
 
-type ElseStatement struct {
+type ElseNode struct {
 	Line int
 	Body []any
 }
 
-type ForStatement struct {
+type ForNode struct {
 	Line      int
 	Condition any
 	Body      []any
 }
 
-type AssignmentExpression struct {
+type AssignmentNode struct {
 	Line  int
 	Owner any
 	Value any
 }
 
-type ReturnStatement struct {
+type ReturnNode struct {
 	Line  int
 	Value any
 }
 
-type ArrayExpression struct {
+type ArrayNode struct {
 	Line   int
 	Values []any
 	Left   any
 }
 
-type MapExpression struct {
+type MapNode struct {
 	Line   int
 	Values map[string]any
 }
 
-type MemberExpression struct {
+type MemberNode struct {
 	Line     int
 	Left     any
 	Prop     any
@@ -170,16 +145,16 @@ type MemberExpression struct {
 	Assign   any
 }
 
-type ClassDeclaration struct {
+type ClassDeclarationNode struct {
 	Line       int
 	Name       any
 	Body       []any
-	Methods    []*FunctionDeclaration
+	Methods    []*FunctionDeclarationNode
 	Extends    []any
 	Enviroment *enviroment.Enviroment
 }
 
-type ObjectExpression struct {
+type ObjectNode struct {
 	Line   int
 	Caller any
 }
