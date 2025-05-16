@@ -650,7 +650,7 @@ func EvalCallStatement(node *parser.CallStatement, env *enviroment.Enviroment) (
 			callArgs[i] = reflect.ValueOf(arg)
 		}
 		if res := v.Call(callArgs); len(res) >= 1 {
-			return res[0].Interface(), nil
+			return utils.DecodeBug(res[0].Interface()), nil
 		}
 		return nil, nil
 	default:

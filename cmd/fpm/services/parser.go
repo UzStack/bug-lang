@@ -31,7 +31,7 @@ func ParseGetData(request *http.Request) any {
 	for _, p := range strings.Split(rawQuery, "&") {
 		param := strings.Split(p, "=")
 		if len(param) >= 2 {
-			data.Add(types.NewString(param[0]), utils.DecodeBug(param[1]))
+			data.Append(types.NewString(param[0]), utils.DecodeBug(param[1]))
 		}
 	}
 	return data
@@ -43,22 +43,22 @@ func ParseRequest(request *http.Request) any {
 		if len(values) > 1 {
 			value := types.NewArray([]any{}).(*types.ArrayValue)
 			for _, v := range values {
-				value.Add(utils.DecodeBug(v))
+				value.Append(utils.DecodeBug(v))
 			}
-			headers.Add(types.NewString(key), value)
+			headers.Append(types.NewString(key), value)
 		} else if len(values) == 1 {
-			headers.Add(types.NewString(key), utils.DecodeBug(values[0]))
+			headers.Append(types.NewString(key), utils.DecodeBug(values[0]))
 		} else {
-			headers.Add(types.NewString(key), types.NewNull())
+			headers.Append(types.NewString(key), types.NewNull())
 		}
 	}
 
 	globals := types.NewMap(make(map[string]any)).(*types.MapValue)
-	globals.Add(types.NewString("RequestURI"), types.NewString(request.RequestURI))
-	globals.Add(types.NewString("Host"), types.NewString(request.Host))
-	globals.Add(types.NewString("Method"), types.NewString(request.Method))
-	globals.Add(types.NewString("Headers"), headers)
-	globals.Add(types.NewString("Path"), types.NewString(request.URL.Path))
+	globals.Append(types.NewString("RequestURI"), types.NewString(request.RequestURI))
+	globals.Append(types.NewString("Host"), types.NewString(request.Host))
+	globals.Append(types.NewString("Method"), types.NewString(request.Method))
+	globals.Append(types.NewString("Headers"), headers)
+	globals.Append(types.NewString("Path"), types.NewString(request.URL.Path))
 	return globals
 }
 

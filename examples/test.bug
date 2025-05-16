@@ -1,0 +1,17 @@
+a = [2, 1,2,3];
+
+
+if (a.contains(10)){
+    println("mavjud");
+}else{
+    println("mavjud emas");
+}
+
+b = {
+    "name":"Samandar",
+    "age": 20,
+}
+
+
+b.remove("age");
+println(b);
