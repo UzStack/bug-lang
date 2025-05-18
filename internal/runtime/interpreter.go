@@ -356,6 +356,8 @@ func EvalIfStatement(node *parser.IfNode, env *enviroment.Enviroment) (any, erro
 	if err != nil {
 		return nil, err
 	}
+	// left, _ := Interpreter(node.Condition.(*parser.BinaryNode).Left, env)
+
 	if condition.(types.Object).GetValue().(bool) {
 		res, err, isReturn := EvalBody(node.Body, env)
 		if err != nil {
@@ -369,17 +371,21 @@ func EvalIfStatement(node *parser.IfNode, env *enviroment.Enviroment) (any, erro
 			Type:    types.Flow,
 		}, nil
 	}
+
 	for _, child := range node.Childs {
 		child, err := Interpreter(child, env)
 		if err != nil {
 			return nil, err
 		}
-		result := child
-		if result.(*types.FlowValue).Catched {
-			return &types.FlowValue{
-				Catched: true,
-				Type:    types.Flow,
-			}, nil
+		switch v := child.(type) {
+		case *types.FlowValue:
+			if v.Catched {
+				return v, nil
+			}
+		case *types.ReturnValue:
+			return v, nil
+		default:
+			pp.Print(v)
 		}
 	}
 	return &types.FlowValue{
@@ -608,7 +614,7 @@ func EvalCallStatement(node *parser.CallNode, env *enviroment.Enviroment) (any, 
 		// 	return nil, fmt.Errorf("%s funcsiyasi parametri xato berildi funcsiya kutmoqda: %d berildi: %d line: %d", v.Name, len(v.Params), len(node.Args), node.Line)
 		// }
 		var result any
-		scope = v.Enviroment
+		scope = enviroment.NewEnv(v.Enviroment)
 		scope.AssignmenVariable("this", v.OwnerObject, node.Line)
 		scope.AssignmenVariable("super", &types.NativeFunctionValue{
 			Call: func(value *parser.ClassDeclarationNode) any {
