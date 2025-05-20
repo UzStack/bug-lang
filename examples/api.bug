@@ -11,5 +11,9 @@ var data = [
     _GET, _POST, _REQUEST, _GLOBALS
 ];
 
-println(json.encode(data));
-println(json.decode("{\"name\":1}"));
+println(
+    [
+        json.decode("{\"name\":1}"),
+        json.encode(data)
+    ]
+    );
