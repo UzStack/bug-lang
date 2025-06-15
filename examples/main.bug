@@ -1,11 +1,19 @@
-import "examples.routes.routes";
-import "json";
+// import "examples.routes.routes";
+// import "json";
 
-r = new routes.Routes();
 
-func test(){
-    return {"detail": "ok"}
-}
+var names = [1,2];
 
-r.register("test", test, 10);
-print(json.encode(r.list()["test"]()));
+names.appnd(3);
+println(names);
+
+
+
+// r = new routes.Routes();
+
+// func test(){
+//     return {"detail": "ok"}
+// }
+
+// r.register("test", test, 10);
+// print(json.encode(r.list()["test"]()));

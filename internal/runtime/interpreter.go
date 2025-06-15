@@ -297,7 +297,11 @@ func EvalMemberExpression(node *parser.MemberNode, env *enviroment.Enviroment) (
 			return t.Enviroment.GetVariable(prop, node.Line)
 		case types.Object:
 			v := reflect.ValueOf(left)
-			return v.MethodByName(string(strings.ToUpper(prop[:1]) + prop[1:])), nil
+			method := v.MethodByName(string(strings.ToUpper(prop[:1]) + prop[1:]))
+			if !method.IsValid() {
+				return nil, fmt.Errorf("method %s not found in %T line: %d", prop, t, node.Line)
+			}
+			return method, nil
 		case *enviroment.Enviroment:
 			return t.GetVariable(prop, node.Line)
 		default:

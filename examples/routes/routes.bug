@@ -6,7 +6,7 @@ class Routes(){
     }
 
     func register(path, fn, ds){
-        this.rr.add(path, fn);
+        this.rr.append(path, fn);
     }
 
     func list(){
