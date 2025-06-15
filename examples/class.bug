@@ -1,0 +1,70 @@
+import "math";
+
+class A(){
+    func init(){
+        this.name = "A";
+    }
+
+    func getName(){
+        return this.name;
+    }
+}
+
+class B(){
+    func init(){
+        this.name = "B";
+    }
+    func getName(){
+        return this.name;
+    }
+}
+
+class C(B, A){
+    func init(){
+        super(A).init();
+        println(this.name);
+        super(B).init();
+        println(this.name);
+        this.name = "C";
+    }
+    func getName(){
+        return this.name;
+    }
+}
+
+c = new C();
+println(c.getName());
+
+var users = [
+    {
+        "name": "Samandar",
+        "age": 20,
+        "id": 1,
+    },
+    {
+        "name": "Nomalum",
+        "age": 100,
+        "id": 2,
+    }
+];
+i = 0;
+
+for (i < users.size()){
+    user = users[i];
+    println();
+    println("id: ", user["id"]);
+    println("name: ", user["name"]);
+    println("age: ", user["age"]);
+    println();
+    i = i + 1;
+}
+
+var numbers = [20.4324, 324.423432, 10.21];
+numbers.append(20.1122);
+i = 0;
+for (i < numbers.size()){
+    println(math.round(numbers[i], 2));
+    i = i + 1;
+}
+
+println("salom\r\nqalaysan")
