@@ -1,17 +1,43 @@
+import "json";
+
 class Routes(){
     func init(){
-        this.routes = {};
+        this.routes = {
+            "POST": {},
+            "GET": {},
+            "PUT": {},
+            "PATCH": {},
+            "DELETE": {},
+        };
     }
 
-    func register(path, fn){
-        this.routes.append(path, fn);
+    func post(path, fn){
+        this.routes["POST"].append(path, fn);
+    }
+
+    func get(path, fn){
+        this.routes["GET"].append(path, fn);
+    }
+
+    func put(path, fn){
+        this.routes["PUT"].append(path, fn);
+    }
+
+    func patch(path, fn){
+        this.routes["PATCH"].append(path, fn);
+    }
+
+    func delete(path, fn){
+        this.routes["DELETE"].append(path, fn);
     }
 
     func list(){
         return this.routes;
     }
 
-    func get(path){
-        return this.routes[path];
+    func get_handler(){
+        var path = $_REQUEST["Path"];
+        var method = $_REQUEST["Method"]
+        return this.routes[method][path];
     }
 }

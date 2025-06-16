@@ -8,10 +8,10 @@ import "handlers.root";
 user = new user.User();
 
 router = new routes.Routes();
-router.register("/", root.health);
-router.register("/users/1", user.detail);
-router.register("/users", user.list);
-router.register("/users/create", user.create);
+router.get("/", root.health);
+router.get("/users/1", user.detail);
+router.get("/users", user.list);
+router.post("/users/create", user.create);
 
-handler = router.get($_REQUEST["Path"]);
-println(json.encode(handler()));
+handler = router.get_handler();
+print(json.encode(handler()));

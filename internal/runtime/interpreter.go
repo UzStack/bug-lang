@@ -100,8 +100,9 @@ func EvalStdModuleStatement(node *parser.StdModuleNode, env *enviroment.Envirome
 	return nil, nil
 }
 func EvalModuleStatement(node *parser.ModuleNode, env *enviroment.Enviroment) (any, error) {
-	scope := enviroment.NewEnv(nil)
-	std.Load(scope)
+	// WARNING: buni to'g'irlash kerak module ichida global env ishlatilyapti bu xato
+	scope := enviroment.NewEnv(env)
+	// std.Load(scope)
 	if module := env.Modules.Get(node.Path); module != nil {
 		return env.DeclareVariable(node.Name, module, node.Line), nil
 	}

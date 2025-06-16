@@ -1,6 +1,4 @@
 
-
-
 class User(){
     func init(){
         this.users = [
