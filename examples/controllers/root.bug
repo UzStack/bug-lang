@@ -1,0 +1,7 @@
+import "jst.facades.controllers";
+
+class RootController(controllers.BaseController){
+    func health(){
+        return {"detail": "ok"};
+    }
+}

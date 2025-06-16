@@ -1,11 +1,12 @@
 header("Content-Type", "application/json");
-import "routes.routes";
+import "jst.routes";
 import "json";
-import "handlers.user";
-import "handlers.root";
+import "controllers.user";
+import "controllers.root";
 
 
-user = new user.User();
+user = new user.UserController();
+root = new root.RootController();
 
 router = new routes.Routes();
 router.get("/", root.health);

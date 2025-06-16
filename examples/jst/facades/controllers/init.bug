@@ -1,0 +1,6 @@
+
+class BaseController(){
+    func query(){
+        return "salom";
+    }
+}

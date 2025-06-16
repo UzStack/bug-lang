@@ -1,0 +1,13 @@
+import "jst.facades.controllers.generic" as controllers;
+
+class UserController(controllers.GenericAPIViewset){
+    func query(){
+       return [
+            {
+                "first_name": "Samandar",
+                "last_name": "Azamov",
+                "phone": "998888112309",
+            }
+        ];
+    }    
+}

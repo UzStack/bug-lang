@@ -1,0 +1,28 @@
+
+
+
+class GenericAPIViewset(){
+
+    func query(){
+        return [];
+    }
+
+    func list(){
+        return this.query();
+    }
+
+    func detail(){
+        return this.query()[0];
+    }
+    
+    func create(){
+        query = this.query();
+        query.append({
+            "first_name": "User 2",
+            "last_name": "User 2",
+            "phone": "998888112309",
+        });
+        return query;
+    }
+
+}

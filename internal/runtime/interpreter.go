@@ -100,19 +100,19 @@ func EvalStdModuleStatement(node *parser.StdModuleNode, env *enviroment.Envirome
 	return nil, nil
 }
 func EvalModuleStatement(node *parser.ModuleNode, env *enviroment.Enviroment) (any, error) {
+	if module := env.GetModules().Get(node.Path); module != nil {
+		return env.DeclareVariable(node.Name, module, node.Line), nil
+	}
 	// WARNING: buni to'g'irlash kerak module ichida global env ishlatilyapti bu xato
 	scope := enviroment.NewEnv(env)
 	// std.Load(scope)
-	if module := env.Modules.Get(node.Path); module != nil {
-		return env.DeclareVariable(node.Name, module, node.Line), nil
-	}
 	for _, stmt := range node.Body {
 		if _, err := Interpreter(stmt, scope); err != nil {
 			return nil, err
 		}
 	}
 	env.DeclareVariable(node.Name, types.NewModule(scope), node.Line)
-	env.Modules.Add(node.Path, types.NewModule(scope))
+	env.GetModules().Add(node.Path, types.NewModule(scope))
 	return nil, nil
 }
 
@@ -120,7 +120,7 @@ func DeclareExtends(class *parser.ClassDeclarationNode, env *enviroment.Envirome
 	envs := make(map[string]*enviroment.Enviroment)
 	for _, extend := range class.Extends {
 		extScope := enviroment.NewEnv(scope)
-		res, err := Interpreter(extend, env)
+		res, err := Interpreter(extend, scope)
 		if err != nil {
 			return nil, err
 		}

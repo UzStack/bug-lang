@@ -32,6 +32,13 @@ func (e *Enviroment) DeclareVariable(name string, value any, line int) any {
 	return value
 }
 
+func (e *Enviroment) GetModules() *Module {
+	if e.Modules == nil {
+		return e.Owner.GetModules()
+	}
+	return e.Modules
+}
+
 func (e *Enviroment) AssignmenVariable(name string, value any, line int) any {
 	e.Variables[name] = value
 	return value
