@@ -1,15 +1,17 @@
 class Routes(){
     func init(){
-        this.rr = {
-            "name": "sadas",
-        };
+        this.routes = {};
     }
 
-    func register(path, fn, ds){
-        this.rr.append(path, fn);
+    func register(path, fn){
+        this.routes.append(path, fn);
     }
 
     func list(){
-        return this.rr;
+        return this.routes;
+    }
+
+    func get(path){
+        return this.routes[path];
     }
 }

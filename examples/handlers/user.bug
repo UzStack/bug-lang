@@ -1,0 +1,31 @@
+
+
+
+class User(){
+    func init(){
+        this.users = [
+            {
+                "first_name": "Samandar",
+                "last_name": "Azamov",
+                "phone": "998888112309",
+            }
+        ];
+    }
+    func list(){
+        return this.users;
+    }
+
+    func detail(){
+        return this.users[0];
+    }
+
+    func create(){
+        this.users.append({
+            "first_name": "User 2",
+            "last_name": "User 2",
+            "phone": "998888112309",
+        });
+        return this.users;
+    }
+    
+}

@@ -7,6 +7,7 @@ import (
 type Enviroment struct {
 	Variables map[string]any
 	Owner     *Enviroment
+	Modules   *Module
 }
 
 func NewEnv(owner *Enviroment) *Enviroment {
@@ -18,6 +19,7 @@ func NewEnv(owner *Enviroment) *Enviroment {
 
 func NewGlobalEnv() *Enviroment {
 	env := NewEnv(nil)
+	env.Modules = NewModule()
 	return env
 }
 

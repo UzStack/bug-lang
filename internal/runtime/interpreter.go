@@ -102,7 +102,7 @@ func EvalStdModuleStatement(node *parser.StdModuleNode, env *enviroment.Envirome
 func EvalModuleStatement(node *parser.ModuleNode, env *enviroment.Enviroment) (any, error) {
 	scope := enviroment.NewEnv(nil)
 	std.Load(scope)
-	if module := enviroment.Modules.Get(node.Path); module != nil {
+	if module := env.Modules.Get(node.Path); module != nil {
 		return env.DeclareVariable(node.Name, module, node.Line), nil
 	}
 	for _, stmt := range node.Body {
@@ -111,7 +111,7 @@ func EvalModuleStatement(node *parser.ModuleNode, env *enviroment.Enviroment) (a
 		}
 	}
 	env.DeclareVariable(node.Name, types.NewModule(scope), node.Line)
-	enviroment.Modules.Add(node.Path, types.NewModule(scope))
+	env.Modules.Add(node.Path, types.NewModule(scope))
 	return nil, nil
 }
 

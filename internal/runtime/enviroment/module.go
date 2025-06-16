@@ -1,7 +1,5 @@
 package enviroment
 
-var Modules *Module = NewModule()
-
 type Module struct {
 	Modules map[string]any
 	Owner   *Module

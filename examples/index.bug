@@ -1,19 +1,17 @@
 header("Content-Type", "application/json");
+import "routes.routes";
 import "json";
-// import "psql";
+import "handlers.user";
+import "handlers.root";
 
-// db = new psql.DB("db");
-// query = db.query("select * from users");
 
-// users = query.findAll();
-// print(users);
-var data = [
-    _GET, _POST, _REQUEST, _GLOBALS
-];
+user = new user.User();
 
-println(
-    [
-        json.decode("{\"name\":1}"),
-        json.encode(data)
-    ]
-    );
+router = new routes.Routes();
+router.register("/", root.health);
+router.register("/users/1", user.detail);
+router.register("/users", user.list);
+router.register("/users/create", user.create);
+
+handler = router.get($_REQUEST["Path"]);
+println(json.encode(handler()));
