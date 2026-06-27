@@ -1,0 +1,72 @@
+// ===== Bug-lang yangi imkoniyatlari demo =====
+
+import "os";
+import "regex";
+import "time";
+
+// --- Unary operatorlar ---
+ochiq = false;
+if (!ochiq) {
+    println("do'kon yopiq");
+}
+println("manfiy:", -42);
+
+// --- break / continue ---
+println("--- juft sonlar 1..10 ---");
+i = 0;
+for (i < 10) {
+    i = i + 1;
+    if (i % 2 == 1) { continue; }
+    if (i > 8) { break; }
+    println(i);
+}
+
+// --- try / catch / throw ---
+func bolish(a, b) {
+    if (b == 0) {
+        throw("nolga bo'lib bo'lmaydi");
+    }
+    return a / b;
+}
+try {
+    println(bolish(10, 2));
+    println(bolish(5, 0));
+} catch (e) {
+    println("xato ushlandi:", e);
+}
+
+// --- Tip funksiyalari ---
+println("len:", len("salomlar"), len([1, 2, 3]));
+println("int + 8 =", int("42") + 8);
+println("str:", str(3.14) + " pi");
+println("type:", type([1, 2]), type("x"), type(10));
+
+// --- String metodlari ---
+qator = "Ali,Vali,Guli";
+ismlar = qator.split(",");
+println("3-ism:", ismlar[2]);
+println("katta:", qator.upper());
+println("almashtirildi:", qator.replace(",", " | "));
+println("bor-mi 'Vali':", qator.contains("Vali"));
+println("kesim:", qator.substring(0, 3));
+
+// --- format ---
+println(format("Salom {}, sizda {} ta xabar bor", "Guli", 5));
+
+// --- map keys / values ---
+user = {"name": "Ali", "age": 25, "city": "Tashkent"};
+kalitlar = user.keys();
+println("kalitlar soni:", kalitlar.size());
+
+// --- os / fayl ---
+os.write("/tmp/buglang_demo.txt", "salom fayl");
+println("fayl:", os.read("/tmp/buglang_demo.txt"));
+os.remove("/tmp/buglang_demo.txt");
+
+// --- regex ---
+println("raqam bor-mi:", regex.match("[0-9]+", "abc123"));
+
+// --- time ---
+println("yil:", time.format("2006"));
+
+println("=== demo tugadi ===");

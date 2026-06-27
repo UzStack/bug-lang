@@ -2,8 +2,8 @@ package parser
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/UzStack/bug-lang/assets"
@@ -142,9 +142,12 @@ func (p *parser) ParseMapItems() map[string]any {
 		return items
 	}
 	for p.At().Type != lexar.CloseBrace {
-		key := p.Next().Value.(string)
+		key, ok := p.Next().Value.(string)
+		if !ok {
+			panic(fmt.Sprintf("Syntax error object: kalit satr bo'lishi kerak Line: %d", p.Prev().Line))
+		}
 		if p.At().Type != lexar.Colon {
-			panic("Syntax error object: " + p.At().Value.(string))
+			panic("Syntax error object: " + fmt.Sprintf("%v", p.At().Value))
 		}
 		p.Except(lexar.Colon, "Except colon Object")
 		items[key] = p.ParseAssignmentExpression()
@@ -239,11 +242,11 @@ func (p *parser) ParseAdditiveExpression() any {
 }
 
 func (p *parser) ParseMultiplicativeExpression() any {
-	left := p.ParseComputedMember()
+	left := p.ParseUnaryExpression()
 
 	for p.At().Value == "*" || p.At().Value == "/" || p.At().Value == "%" {
 		operator := p.Next().Value
-		right := p.ParseComputedMember()
+		right := p.ParseUnaryExpression()
 		left = &BinaryNode{
 			Line:     p.At().Line,
 			Left:     left,
@@ -252,6 +255,19 @@ func (p *parser) ParseMultiplicativeExpression() any {
 		}
 	}
 	return left
+}
+
+// ParseUnaryExpression unary operatorlarni ishlaydi: !x, -x
+func (p *parser) ParseUnaryExpression() any {
+	if p.At().Type == lexar.BinaryOperator && (p.At().Value == "!" || p.At().Value == "-") {
+		op := p.Next().Value
+		return &UnaryNode{
+			Line:     p.At().Line,
+			Operator: op,
+			Operand:  p.ParseUnaryExpression(),
+		}
+	}
+	return p.ParseComputedMember()
 }
 
 func (p *parser) ParseArgs() []any {
@@ -395,12 +411,36 @@ func (p *parser) ParsePrimaryExpression() any {
 			Line:  p.At().Line,
 			Value: p.Next().Value,
 		}
+	case lexar.Fn:
+		return p.ParseFnExpression()
 	case lexar.Semicolon:
 		p.Next()
 	default:
-		p.At()
+		// indeks oldinga surilmasa chaqiruvchi loop cheksiz aylanadi
+		panic(fmt.Sprintf("Parser error: kutilmagan token '%v' Line: %d", p.At().Value, p.At().Line))
 	}
 	return 0
+}
+
+// ParseFnExpression anonim (lambda) funksiya: func(a, b) { ... }
+func (p *parser) ParseFnExpression() any {
+	p.Next() // func
+	args := p.ParseArgs()
+	var params []any
+	for _, arg := range args {
+		switch arg.(type) {
+		case *IdentifierNode, *AssignmentNode:
+			params = append(params, arg)
+		default:
+			panic("Funcsiya parametri nato'g'ri")
+		}
+	}
+	return &FunctionDeclarationNode{
+		Line:   p.At().Line,
+		Name:   "", // anonim
+		Params: params,
+		Body:   p.ParseBody(),
+	}
 }
 func (p *parser) ParseClassStatement() any {
 	p.Next()
@@ -433,7 +473,7 @@ func (p *parser) ParseFnDeclaration() *FunctionDeclarationNode {
 		case *IdentifierNode, *AssignmentNode:
 			params = append(params, arg)
 		default:
-			log.Fatal("Funcsiya parametri nato'g'ri")
+			panic("Funcsiya parametri nato'g'ri")
 		}
 	}
 	return &FunctionDeclarationNode{
@@ -447,8 +487,12 @@ func (p *parser) ParseFnDeclaration() *FunctionDeclarationNode {
 func (p *parser) ParseImportStatement() any {
 	p.Next()
 	var name string
-	module := p.ParseAssignmentExpression().(*StringLiteralNode).Value.(string)
-	path := strings.Replace(module, ".", "/", -1)
+	moduleNode, ok := p.ParseAssignmentExpression().(*StringLiteralNode)
+	if !ok {
+		panic(fmt.Sprintf("import: yo'l satr bo'lishi kerak Line: %d", p.At().Line))
+	}
+	module := moduleNode.Value.(string)
+	path := strings.ReplaceAll(module, ".", "/")
 	nameSegments := strings.Split(module, ".")
 	if p.At().Type == lexar.As {
 		p.Next()
@@ -490,7 +534,16 @@ func (p *parser) ParseImportStatement() any {
 		if utils.IsDirectory(p.BaseDir + path) {
 			path = path + "/init"
 		}
-		code, err := os.ReadFile(p.BaseDir + path + ".bug")
+		full := filepath.Clean(p.BaseDir + path + ".bug")
+		// path traversal himoyasi: BaseDir o'rnatilgan bo'lsa (FPM web rejimi)
+		// import undan tashqariga chiqa olmasligi kerak
+		if p.BaseDir != "" {
+			base := filepath.Clean(p.BaseDir)
+			if full != base && !strings.HasPrefix(full, base+string(os.PathSeparator)) {
+				panic("import: ruxsat berilmagan yo'l: " + path)
+			}
+		}
+		code, err := os.ReadFile(full)
 		if err != nil {
 			panic("Error reading code: " + err.Error())
 		}
@@ -532,9 +585,47 @@ func (p *parser) ParseStatement() any {
 		return p.ParseClassStatement()
 	case lexar.Import:
 		return p.ParseImportStatement()
+	case lexar.Try:
+		return p.ParseTryStatement()
+	case lexar.Break:
+		p.Next()
+		node := &BreakNode{Line: p.At().Line}
+		if p.At().Type == lexar.Semicolon {
+			p.Next()
+		}
+		return node
+	case lexar.Continue:
+		p.Next()
+		node := &ContinueNode{Line: p.At().Line}
+		if p.At().Type == lexar.Semicolon {
+			p.Next()
+		}
+		return node
 	default:
 		return p.ParseAssignmentExpression()
 	}
+}
+
+func (p *parser) ParseTryStatement() any {
+	p.Next()
+	body := p.ParseBody()
+	node := &TryNode{
+		Line: p.At().Line,
+		Body: body,
+	}
+	if p.At().Type == lexar.Catch {
+		p.Next()
+		// ixtiyoriy: catch (e)
+		if p.At().Type == lexar.OpenParen {
+			p.Next()
+			if p.At().Type == lexar.Identifier {
+				node.CatchParam = p.Next().Value.(string)
+			}
+			p.Except(lexar.CloseParen, "Except close paren CATCH")
+		}
+		node.CatchBody = p.ParseBody()
+	}
+	return node
 }
 
 func (p *parser) CreateAST() any {

@@ -4,34 +4,31 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	"github.com/UzStack/bug-lang/pkg/utils"
 )
 
+const maxBodySize = 10 << 20 // 10MB — cheksiz body DoS oldini olish
+
 func ParsePostData(request *http.Request) any {
-	body, err := io.ReadAll(request.Body)
+	body, err := io.ReadAll(io.LimitReader(request.Body, maxBodySize))
 	if err != nil {
-		panic(err.Error())
+		return types.NewMap(make(map[string]any))
 	}
 	var data any
 	if err := json.Unmarshal(body, &data); err != nil {
-		return types.NewMap(nil)
+		return types.NewMap(make(map[string]any))
 	}
 	return utils.DecodeBug(data)
 }
 
 func ParseGetData(request *http.Request) any {
 	data := types.NewMap(make(map[string]any)).(*types.MapValue)
-	rawQuery := request.URL.RawQuery
-	if len(rawQuery) == 0 {
-		return data
-	}
-	for _, p := range strings.Split(rawQuery, "&") {
-		param := strings.Split(p, "=")
-		if len(param) >= 2 {
-			data.Append(types.NewString(param[0]), utils.DecodeBug(param[1]))
+	// URL.Query() percent-decode va '=' belgisini to'g'ri ishlaydi
+	for key, values := range request.URL.Query() {
+		if len(values) > 0 {
+			data.Append(types.NewString(key), utils.DecodeBug(values[0]))
 		}
 	}
 	return data

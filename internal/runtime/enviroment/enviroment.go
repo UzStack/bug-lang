@@ -23,20 +23,21 @@ func NewGlobalEnv() *Enviroment {
 	return env
 }
 
+// ponytail: qayta e'lon qilishga ruxsat (qattiq panic o'rniga).
+// Aks holda for tanasidagi `var i = ...` ikkinchi iteratsiyada interpreterni o'ldirardi.
 func (e *Enviroment) DeclareVariable(name string, value any, line int) any {
-	_, ok := e.Variables[name]
-	if ok {
-		panic(fmt.Sprintf("O'zvaruvchi mavjud %s Line: %d", name, line))
-	}
 	e.Variables[name] = value
 	return value
 }
 
 func (e *Enviroment) GetModules() *Module {
-	if e.Modules == nil {
+	if e.Modules != nil {
+		return e.Modules
+	}
+	if e.Owner != nil {
 		return e.Owner.GetModules()
 	}
-	return e.Modules
+	return NewModule()
 }
 
 func (e *Enviroment) AssignmenVariable(name string, value any, line int) any {

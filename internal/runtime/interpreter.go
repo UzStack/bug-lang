@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"github.com/UzStack/bug-lang/internal/runtime/std"
 	"github.com/UzStack/bug-lang/internal/runtime/types"
 	"github.com/UzStack/bug-lang/pkg/utils"
-	"github.com/k0kubun/pp"
 )
 
 func Interpreter(astBody any, env *enviroment.Enviroment) (any, error) {
@@ -76,6 +76,14 @@ func Interpreter(astBody any, env *enviroment.Enviroment) (any, error) {
 		return EvalMapDeclaration(node, env)
 	case *parser.ObjectNode:
 		return EvalObjectExpression(node, env)
+	case *parser.UnaryNode:
+		return EvalUnaryExpression(node, env)
+	case *parser.BreakNode:
+		return &types.BreakValue{}, nil
+	case *parser.ContinueNode:
+		return &types.ContinueValue{}, nil
+	case *parser.TryNode:
+		return EvalTryStatement(node, env)
 	default:
 		return node, nil
 		// fmt.Printf("Tip: %T", astBody)
@@ -88,11 +96,20 @@ func EvalBody(statements []any, env *enviroment.Enviroment) (any, error, bool) {
 		if err != nil {
 			return nil, err, false
 		}
-		if isReturn, response := IsReturn(res); isReturn {
-			return response, nil, true
+		// return/break/continue tanani to'xtatadi va yuqoriga ko'tariladi
+		if isControl(res) {
+			return res, nil, true
 		}
 	}
 	return nil, nil, false
+}
+
+func isControl(result any) bool {
+	switch result.(type) {
+	case *types.ReturnValue, *types.BreakValue, *types.ContinueValue:
+		return true
+	}
+	return false
 }
 
 func EvalStdModuleStatement(node *parser.StdModuleNode, env *enviroment.Enviroment) (any, error) {
@@ -124,14 +141,17 @@ func DeclareExtends(class *parser.ClassDeclarationNode, env *enviroment.Envirome
 		if err != nil {
 			return nil, err
 		}
-		exd := res.(*parser.ClassDeclarationNode)
-		DeclareExtends(exd, env, scope, obj)
+		exd, ok := res.(*parser.ClassDeclarationNode)
+		if !ok {
+			return nil, fmt.Errorf("nasl olinayotgan qiymat class emas: %T Line: %d", res, class.Line)
+		}
+		if _, err := DeclareExtends(exd, env, scope, obj); err != nil {
+			return nil, err
+		}
 		for _, method := range exd.Methods {
 			EvalFunctionDeclaration(method, extScope, obj)
 		}
-		for key, value := range extScope.Variables {
-			scope.Variables[key] = value
-		}
+		maps.Copy(scope.Variables, extScope.Variables)
 		envs[exd.Name.(*parser.IdentifierNode).Value.(string)] = extScope
 	}
 	return envs, nil
@@ -149,7 +169,11 @@ func EvalObjectExpression(node *parser.ObjectNode, env *enviroment.Enviroment) (
 		if err != nil {
 			return nil, err
 		}
-		class = res.(*parser.ClassDeclarationNode)
+		var ok bool
+		class, ok = res.(*parser.ClassDeclarationNode)
+		if !ok {
+			return nil, fmt.Errorf("'%s' class emas, 'new' bilan yaratib bo'lmaydi Line: %d", className, node.Line)
+		}
 		methods = class.Methods
 	case *parser.MemberNode:
 		className = t.Prop.(*parser.IdentifierNode).Value.(string)
@@ -157,8 +181,14 @@ func EvalObjectExpression(node *parser.ObjectNode, env *enviroment.Enviroment) (
 		if err != nil {
 			return nil, err
 		}
-		class = res.(*parser.ClassDeclarationNode)
+		var ok bool
+		class, ok = res.(*parser.ClassDeclarationNode)
+		if !ok {
+			return nil, fmt.Errorf("'%s' class emas, 'new' bilan yaratib bo'lmaydi Line: %d", className, node.Line)
+		}
 		methods = class.Methods
+	default:
+		return nil, fmt.Errorf("'new' faqat class bilan ishlatiladi Line: %d", node.Line)
 	}
 	scope := enviroment.NewEnv(class.Enviroment)
 	obj := types.NewObject(className, scope).(*types.ObjectValue)
@@ -248,7 +278,17 @@ func EvalMemberExpression(node *parser.MemberNode, env *enviroment.Enviroment) (
 			if err != nil {
 				return nil, err
 			}
-			index, _ := utils.Str2Int(prop.(types.Object).GetValue())
+			propObj, err := asObject(prop, node.Line)
+			if err != nil {
+				return nil, err
+			}
+			index, err := utils.Str2Int(propObj.GetValue())
+			if err != nil {
+				return nil, fmt.Errorf("array index butun son bo'lishi kerak Line: %d", node.Line)
+			}
+			if index < 0 || index >= len(t.Values) {
+				return nil, fmt.Errorf("array index chegaradan tashqarida: %d (hajmi %d) Line: %d", index, len(t.Values), node.Line)
+			}
 			return t.Values[index], nil
 		// case *types.ObjectValue:
 		// return t.Values[Interpreter(node.Prop, env).(types.Object).GetValue().(string)]
@@ -259,14 +299,14 @@ func EvalMemberExpression(node *parser.MemberNode, env *enviroment.Enviroment) (
 			}
 			name := prop.(types.Object)
 			if node.Assign != nil {
-				t.Values[name.GetValue().(string)] = node.Assign
+				t.Data[name.GetValue().(string)] = node.Assign
 			}
 			prop, err = Interpreter(node.Prop, env)
 			if err != nil {
 				return nil, err
 			}
 			index, _ := prop.(types.Object).GetValue().(string)
-			response, ok := t.Values[index]
+			response, ok := t.Data[index]
 			if !ok {
 				return nil, fmt.Errorf("map item not found: %s", index)
 			}
@@ -280,7 +320,10 @@ func EvalMemberExpression(node *parser.MemberNode, env *enviroment.Enviroment) (
 		if err != nil {
 			return nil, err
 		}
-		left := res.(*types.ObjectValue)
+		left, ok := res.(*types.ObjectValue)
+		if !ok {
+			return nil, fmt.Errorf("faqat obyekt maydoniga qiymat berish mumkin, berildi: %T Line: %d", res, node.Line)
+		}
 		name := node.Prop.(*parser.IdentifierNode).Value.(string)
 		return left.Enviroment.AssignmenVariable(name, node.Assign, node.Line), nil
 	} else {
@@ -297,6 +340,9 @@ func EvalMemberExpression(node *parser.MemberNode, env *enviroment.Enviroment) (
 		case *types.ModuleValue:
 			return t.Enviroment.GetVariable(prop, node.Line)
 		case types.Object:
+			if prop == "" {
+				return nil, fmt.Errorf("bo'sh metod nomi Line: %d", node.Line)
+			}
 			v := reflect.ValueOf(left)
 			method := v.MethodByName(string(strings.ToUpper(prop[:1]) + prop[1:]))
 			if !method.IsValid() {
@@ -305,8 +351,10 @@ func EvalMemberExpression(node *parser.MemberNode, env *enviroment.Enviroment) (
 			return method, nil
 		case *enviroment.Enviroment:
 			return t.GetVariable(prop, node.Line)
+		case map[string]any:
+			return t[prop], nil
 		default:
-			return t.(map[string]any)[prop], nil
+			return nil, fmt.Errorf("'%s' maydoniga kirib bo'lmaydi: %T Line: %d", prop, t, node.Line)
 		}
 
 	}
@@ -341,16 +389,26 @@ func EvalForStatement(node *parser.ForNode, env *enviroment.Enviroment) (any, er
 		if err != nil {
 			return nil, err
 		}
-		condition := res.(types.Object).GetValue().(bool)
-		if !condition {
-			break
-		}
-		res, err, isReturn := EvalBody(node.Body, env)
+		condition, err := asBool(res, node.Line)
 		if err != nil {
 			return nil, err
 		}
-		if isReturn {
-			return res, nil
+		if !condition {
+			break
+		}
+		body, err, stop := EvalBody(node.Body, env)
+		if err != nil {
+			return nil, err
+		}
+		if stop {
+			switch body.(type) {
+			case *types.BreakValue:
+				return nil, nil
+			case *types.ContinueValue:
+				continue
+			default: // ReturnValue — yuqoriga ko'tariladi
+				return body, nil
+			}
 		}
 	}
 	return nil, nil
@@ -361,9 +419,11 @@ func EvalIfStatement(node *parser.IfNode, env *enviroment.Enviroment) (any, erro
 	if err != nil {
 		return nil, err
 	}
-	// left, _ := Interpreter(node.Condition.(*parser.BinaryNode).Left, env)
-
-	if condition.(types.Object).GetValue().(bool) {
+	condBool, err := asBool(condition, node.Line)
+	if err != nil {
+		return nil, err
+	}
+	if condBool {
 		res, err, isReturn := EvalBody(node.Body, env)
 		if err != nil {
 			return nil, err
@@ -390,7 +450,7 @@ func EvalIfStatement(node *parser.IfNode, env *enviroment.Enviroment) (any, erro
 		case *types.ReturnValue:
 			return v, nil
 		default:
-			pp.Print(v)
+			return nil, fmt.Errorf("kutilmagan if-flow qiymati: %T Line: %d", v, node.Line)
 		}
 	}
 	return &types.FlowValue{
@@ -404,7 +464,11 @@ func EvalElseIfStatement(node *parser.ElseIfNode, env *enviroment.Enviroment) (a
 	if err != nil {
 		return nil, err
 	}
-	if condition.(types.Object).GetValue().(bool) {
+	condBool, err := asBool(condition, node.Line)
+	if err != nil {
+		return nil, err
+	}
+	if condBool {
 		res, err, isReturn := EvalBody(node.Body, env)
 		if err != nil {
 			return nil, err
@@ -450,6 +514,10 @@ func EvalFunctionDeclaration(node *parser.FunctionDeclarationNode, env *envirome
 		OwnerObject: ownerObject,
 		Enviroment:  env,
 	}
+	// anonim (lambda) funksiya — env'ga yozilmaydi, faqat qiymat sifatida qaytadi
+	if node.Name == "" {
+		return fn, nil
+	}
 	return env.AssignmenVariable(node.Name, fn, node.Line), nil
 }
 
@@ -462,6 +530,94 @@ func EvalProgram(node *parser.ProgramNode, env *enviroment.Enviroment) (any, err
 	return nil, nil
 }
 
+// asObject xavfsiz tarzda qiymatni Object'ga keltiradi (panic o'rniga error).
+func asObject(v any, line int) (types.Object, error) {
+	obj, ok := v.(types.Object)
+	if !ok {
+		return nil, fmt.Errorf("qiymat obyekt emas: %T Line: %d", v, line)
+	}
+	return obj, nil
+}
+
+// asBool shart ifodasidan bool oladi (if/for uchun).
+func asBool(v any, line int) (bool, error) {
+	obj, err := asObject(v, line)
+	if err != nil {
+		return false, err
+	}
+	b, ok := obj.GetValue().(bool)
+	if !ok {
+		return false, fmt.Errorf("shart bool bo'lishi kerak, berildi: %T Line: %d", obj.GetValue(), line)
+	}
+	return b, nil
+}
+
+func EvalUnaryExpression(node *parser.UnaryNode, env *enviroment.Enviroment) (any, error) {
+	res, err := Interpreter(node.Operand, env)
+	if err != nil {
+		return nil, err
+	}
+	obj, err := asObject(res, node.Line)
+	if err != nil {
+		return nil, err
+	}
+	switch node.Operator {
+	case "!":
+		b, ok := obj.GetValue().(bool)
+		if !ok {
+			return nil, fmt.Errorf("'!' faqat bool bilan ishlaydi, berildi: %T Line: %d", obj.GetValue(), node.Line)
+		}
+		return types.NewBool(!b), nil
+	case "-":
+		switch v := obj.GetValue().(type) {
+		case int:
+			return types.NewInt(-v), nil
+		case float64:
+			return types.NewFloat(-v), nil
+		default:
+			return nil, fmt.Errorf("'-' faqat son bilan ishlaydi, berildi: %T Line: %d", v, node.Line)
+		}
+	}
+	return nil, fmt.Errorf("noma'lum unary operator: %v Line: %d", node.Operator, node.Line)
+}
+
+// EvalTryStatement try tanasini ishlaydi; xato (error yoki panic) bo'lsa catch'ga o'tadi.
+func EvalTryStatement(node *parser.TryNode, env *enviroment.Enviroment) (any, error) {
+	body, stop, errMsg := runProtected(node.Body, env)
+	if errMsg == "" {
+		if stop {
+			return body, nil // return/break/continue yuqoriga ko'tariladi
+		}
+		return nil, nil
+	}
+	if node.CatchBody == nil {
+		return nil, nil // catch yo'q — xato yutiladi
+	}
+	scope := enviroment.NewEnv(env)
+	if node.CatchParam != "" {
+		scope.AssignmenVariable(node.CatchParam, types.NewString(errMsg), node.Line)
+	}
+	res, err, _ := EvalBody(node.CatchBody, scope)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// runProtected tanani ishlaydi, error VA panic'ni xabar satriga aylantiradi.
+func runProtected(body []any, env *enviroment.Enviroment) (res any, stop bool, errMsg string) {
+	defer func() {
+		if r := recover(); r != nil {
+			errMsg = fmt.Sprintf("%v", r)
+		}
+	}()
+	r, e, s := EvalBody(body, env)
+	if e != nil {
+		return nil, false, e.Error()
+	}
+	return r, s, ""
+}
+
 func EvalBinaryExpression(node *parser.BinaryNode, env *enviroment.Enviroment) (any, error) {
 	leftRes, err := Interpreter(node.Left, env)
 	if err != nil {
@@ -472,8 +628,28 @@ func EvalBinaryExpression(node *parser.BinaryNode, env *enviroment.Enviroment) (
 		return nil, err
 	}
 
-	leftVal := leftRes.(types.Object).GetValue()
-	rightVal := rightRes.(types.Object).GetValue()
+	leftObj, err := asObject(leftRes, node.Line)
+	if err != nil {
+		return nil, err
+	}
+	rightObj, err := asObject(rightRes, node.Line)
+	if err != nil {
+		return nil, err
+	}
+	leftVal := leftObj.GetValue()
+	rightVal := rightObj.GetValue()
+
+	// null bilan solishtirish (boshqa amallar reflect.TypeOf(nil) da panic qilardi)
+	if leftVal == nil || rightVal == nil {
+		switch node.Operator {
+		case "==":
+			return types.NewBool(leftVal == nil && rightVal == nil), nil
+		case "!=":
+			return types.NewBool(!(leftVal == nil && rightVal == nil)), nil
+		default:
+			return nil, fmt.Errorf("null bilan '%v' amalini bajarib bo'lmaydi Line: %d", node.Operator, node.Line)
+		}
+	}
 
 	leftKind := reflect.TypeOf(leftVal).Kind()
 	rightKind := reflect.TypeOf(rightVal).Kind()
@@ -523,11 +699,14 @@ func EvalBinaryExpression(node *parser.BinaryNode, env *enviroment.Enviroment) (
 			}
 			result = leftFloat / rightFloat
 		case "%":
+			if int(rightFloat) == 0 {
+				return nil, fmt.Errorf("modulo by zero")
+			}
 			result = int(leftFloat) % int(rightFloat)
 		}
 
-		// Float yoki int aniqlash
-		if leftKind == reflect.Float64 || rightKind == reflect.Float64 || node.Operator == "/" {
+		// Float yoki int aniqlash ("%" doim int qaytaradi)
+		if node.Operator != "%" && (leftKind == reflect.Float64 || rightKind == reflect.Float64 || node.Operator == "/") {
 			return types.NewFloat(result.(float64)), nil
 		}
 		intVal, _ := utils.Float2Int(result)
@@ -623,7 +802,11 @@ func EvalCallStatement(node *parser.CallNode, env *enviroment.Enviroment) (any, 
 		scope.AssignmenVariable("this", v.OwnerObject, node.Line)
 		scope.AssignmenVariable("super", &types.NativeFunctionValue{
 			Call: func(value *parser.ClassDeclarationNode) any {
-				return v.OwnerObject.(*types.ObjectValue).Extends[value.Name.(*parser.IdentifierNode).Value.(string)]
+				obj, ok := v.OwnerObject.(*types.ObjectValue)
+				if !ok {
+					return types.NewNull()
+				}
+				return obj.Extends[value.Name.(*parser.IdentifierNode).Value.(string)]
 			},
 		}, node.Line)
 		for index, arg := range v.Params {
@@ -637,21 +820,22 @@ func EvalCallStatement(node *parser.CallNode, env *enviroment.Enviroment) (any, 
 			case *parser.IdentifierNode:
 				name = v.Value.(string)
 			}
-			if len(node.Args) > index {
-				param, err := Interpreter(node.Args[index], env)
-				if err != nil {
-					return nil, err
-				}
-				scope.AssignmenVariable(name, param, node.Line)
+			// args yuqorida bir marta evaluatsiya qilingan; qayta hisoblamaymiz
+			// (aks holda foo(sideEffect()) ikki marta chaqirilardi)
+			if index < len(args) {
+				scope.AssignmenVariable(name, args[index], node.Line)
 			}
-
 		}
 		res, err, isReturn := EvalBody(v.Body, scope)
 		if err != nil {
 			return nil, err
 		}
 		if isReturn {
-			return res.(*types.ReturnValue).Value, nil
+			if ret, ok := res.(*types.ReturnValue); ok {
+				return ret.Value, nil
+			}
+			// funksiya ichidagi loopdan tashqarida break/continue — e'tiborsiz
+			return result, nil
 		}
 
 		return result, nil
@@ -665,7 +849,6 @@ func EvalCallStatement(node *parser.CallNode, env *enviroment.Enviroment) (any, 
 		}
 		return nil, nil
 	default:
-		pp.Print(v)
+		return nil, fmt.Errorf("chaqirib bo'lmaydi: %T Line: %d", v, node.Line)
 	}
-	return nil, nil
 }
