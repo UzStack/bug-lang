@@ -1,0 +1,41 @@
+// Bug-lang web framework + db namunasi (front controller).
+// nginx barcha so'rovlarni shu faylga yo'naltiradi.
+import "web";
+import "db";
+
+// SQLite ulanish (postgres uchun: new db.DB("host=... dbname=...", "postgres"))
+conn = new db.DB("/tmp/buglang_app.db", "sqlite");
+conn.exec("create table if not exists users (id integer primary key, name text)", []);
+
+app = new web.App();
+app.setDB(conn);
+
+// JSON javob
+app.get("/", func(req) {
+    return {"message": "Salom Bug-lang web framework!", "ok": true};
+});
+
+// DB dan o'qish — handler req["db"] orqali ishlaydi
+app.get("/users", func(req) {
+    return {"users": req["db"].query("select id, name from users order by id", [])};
+});
+
+// URL parametri bilan bitta user
+app.get("/users/:id", func(req) {
+    rows = req["db"].query("select id, name from users where id = ?", [req["params"]["id"]]);
+    if (rows.size() == 0) {
+        status(404);
+        return {"error": "topilmadi"};
+    }
+    return rows[0];
+});
+
+// POST: yangi user qo'shish (body JSON: {"name": "..."})
+app.post("/users", func(req) {
+    name = req["body"]["name"];
+    req["db"].exec("insert into users(name) values(?)", [name]);
+    status(201);
+    return {"created": name};
+});
+
+app.run();

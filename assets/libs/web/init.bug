@@ -1,0 +1,106 @@
+// ===== Bug-lang mini web framework =====
+// Foydalanish (front controller, index.bug):
+//
+//   import "web";
+//   app = new web.App();
+//   app.get("/", func(req) { return {"salom": "dunyo"}; });
+//   app.get("/users/:id", func(req) {
+//       return {"id": req["params"]["id"]};
+//   });
+//   app.run();
+//
+// nginx: barcha so'rovlarni index.bug ga yo'naltiring (try_files ... /index.bug)
+
+import "json";
+
+// matchRoute pattern ("/users/:id") ni haqiqiy path ("/users/5") ga solishtiradi.
+// Mos kelsa params map qaytaradi (masalan {"id": "5"}), aks holda null.
+func matchRoute(pattern, path) {
+    pp = pattern.split("/");
+    sp = path.split("/");
+    if (pp.size() != sp.size()) {
+        return null;
+    }
+    params = {};
+    i = 0;
+    for (i < pp.size()) {
+        seg = pp[i];
+        if (seg.startsWith(":")) {
+            key = seg.substring(1, seg.size());
+            params[key] = sp[i];
+        } elseif (seg != sp[i]) {
+            return null;
+        }
+        i = i + 1;
+    }
+    return params;
+}
+
+// sendResponse handler natijasini javobga yozadi.
+// dict/list -> JSON, string -> matn, null -> handler o'zi yozgan deb hisoblaydi.
+func sendResponse(result) {
+    t = type(result);
+    if (t == "dict") {
+        header("Content-Type", "application/json");
+        println(json.encode(result));
+    } elseif (t == "list") {
+        header("Content-Type", "application/json");
+        println(json.encode(result));
+    } elseif (t == "null") {
+        return null;
+    } else {
+        println(str(result));
+    }
+}
+
+class App() {
+    func init() {
+        this.routes = [];
+        this.database = null;
+    }
+
+    // setDB ulanishni ilovaga bog'laydi; handler'larda req["db"] orqali ochiladi.
+    func setDB(conn) {
+        this.database = conn;
+    }
+
+    func get(path, handler) { this.register("GET", path, handler); }
+    func post(path, handler) { this.register("POST", path, handler); }
+    func put(path, handler) { this.register("PUT", path, handler); }
+    func delete(path, handler) { this.register("DELETE", path, handler); }
+
+    func register(method, path, handler) {
+        this.routes.append({"method": method, "path": path, "handler": handler});
+    }
+
+    // run joriy so'rovni mos route'ga yo'naltiradi.
+    func run() {
+        path = _REQUEST["Path"];
+        method = _REQUEST["Method"];
+        i = 0;
+        for (i < this.routes.size()) {
+            route = this.routes[i];
+            if (route["method"] == method) {
+                params = matchRoute(route["path"], path);
+                if (params != null) {
+                    req = {
+                        "method": method,
+                        "path": path,
+                        "params": params,
+                        "query": _GET,
+                        "body": _POST,
+                        "db": this.database
+                    };
+                    handler = route["handler"];
+                    result = handler(req);
+                    sendResponse(result);
+                    return null;
+                }
+            }
+            i = i + 1;
+        }
+        status(404);
+        header("Content-Type", "application/json");
+        println("{\"error\": \"Not Found\"}");
+    }
+}

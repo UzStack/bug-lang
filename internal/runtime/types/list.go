@@ -26,25 +26,36 @@ func (a *ArrayValue) Extend(value *ArrayValue) {
 	a.Values = append(a.Values, value.GetValue().([]any)...)
 }
 
+func eq(a any, value Object) bool {
+	obj, ok := a.(Object)
+	if !ok {
+		return false
+	}
+	return obj.GetValue() == value.GetValue()
+}
+
 func (a *ArrayValue) Remove(value Object) {
 	a.Values = slices.DeleteFunc(a.Values, func(a any) bool {
-		return a.(Object).GetValue() == value.GetValue()
+		return eq(a, value)
 	})
 }
 
 func (a *ArrayValue) Index(value Object) int {
 	return slices.IndexFunc(a.Values, func(a any) bool {
-		return a.(Object).GetValue() == value.GetValue()
+		return eq(a, value)
 	})
 }
 
 func (a *ArrayValue) Contains(value Object) bool {
 	return slices.ContainsFunc(a.Values, func(a any) bool {
-		return a.(Object).GetValue() == value.GetValue()
+		return eq(a, value)
 	})
 }
 
 func (a *ArrayValue) Pop() {
+	if len(a.Values) == 0 {
+		return
+	}
 	a.Values = a.Values[:len(a.Values)-1]
 }
 

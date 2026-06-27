@@ -7,6 +7,10 @@ var STDLIBS = []any{
 	"ffi",
 	"json",
 	"requestsgo",
+	"os",
+	"regex",
+	"time",
+	"sqldriver",
 }
 
 type Statement struct {
@@ -157,4 +161,25 @@ type ClassDeclarationNode struct {
 type ObjectNode struct {
 	Line   int
 	Caller any
+}
+
+type UnaryNode struct {
+	Line     int
+	Operator any
+	Operand  any
+}
+
+type BreakNode struct {
+	Line int
+}
+
+type ContinueNode struct {
+	Line int
+}
+
+type TryNode struct {
+	Line       int
+	Body       []any
+	CatchParam string
+	CatchBody  []any
 }

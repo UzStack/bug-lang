@@ -34,6 +34,10 @@ type ReturnValue struct {
 	Value any
 }
 
+type BreakValue struct{}
+
+type ContinueValue struct{}
+
 type Object interface {
 	GetValue() any
 }

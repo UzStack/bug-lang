@@ -1,127 +1,66 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"net/http"
 	"net/http/fcgi"
 	"os"
+	"path/filepath"
+	"strings"
 
-	"github.com/UzStack/bug-lang/cmd/fpm/services"
-	"github.com/UzStack/bug-lang/internal/lexar"
-	"github.com/UzStack/bug-lang/internal/parser"
-	"github.com/UzStack/bug-lang/internal/runtime"
-	"github.com/UzStack/bug-lang/internal/runtime/enviroment"
-	"github.com/UzStack/bug-lang/internal/runtime/std"
-	"github.com/UzStack/bug-lang/internal/runtime/types"
+	"github.com/UzStack/bug-lang/internal/runner"
 )
 
 type Job struct {
 	File     string
-	Response chan Result
+	Response chan runner.Response
 	Request  *http.Request
 	BaseDir  string
 }
 
-type Result struct {
-	Body    string
-	Headers []Header
-}
-
-type Header struct {
-	Key   string
-	Value string
-}
-
 func Worker(jobs <-chan Job) {
 	for job := range jobs {
-		code, err := os.ReadFile(job.File)
-		request := job.Request
-		if err != nil {
-			job.Response <- Result{
-				Body: fmt.Sprintf("Error reading file %s: %v", job.File, err),
-			}
-			close(job.Response)
-			continue
-		}
-		tokenize := lexar.NewTokenize()
-		tokens, err := tokenize.Tokenize(string(code))
-		if err != nil {
-			job.Response <- Result{
-				Body: err.Error(),
-			}
-			close(job.Response)
-			continue
-		}
-		parser := parser.NewParser(tokens, job.BaseDir)
-		ast := parser.CreateAST()
-		env := enviroment.NewGlobalEnv()
-		std.Load(env)
-		var buf bytes.Buffer
-		var headers []Header
-		env.AssignmenVariable("print", types.NewNativeFunction(func(values ...any) {
-			std.Pprint(&buf, values)
-		}), -1)
-		env.AssignmenVariable("println", types.NewNativeFunction(func(values ...any) {
-			std.Pprint(&buf, values)
-			fmt.Fprint(&buf, "\n")
-		}), -1)
-		env.AssignmenVariable("header", types.NewNativeFunction(func(key any, value any) {
-			headers = append(headers, Header{
-				Key:   key.(*types.StringValue).Value,
-				Value: value.(*types.StringValue).Value,
-			})
-		}), -1)
-		// Load gloabl variables
-		env.AssignmenVariable("_POST", services.ParsePostData(request), -1)
-		env.AssignmenVariable("_GET", services.ParseGetData(request), -1)
-		env.AssignmenVariable("_REQUEST", services.ParseRequest(request), -1)
-		env.AssignmenVariable("_GLOBALS", services.ParseGlobals(request), -1)
-		if _, err := runtime.Interpreter(ast, env); err != nil {
-			fmt.Println(err.Error())
-			job.Response <- Result{
-				Body: err.Error(),
-			}
-			continue
-		}
-		job.Response <- Result{
-			Body:    buf.String(),
-			Headers: headers,
-		}
+		job.Response <- processJob(job)
 		close(job.Response)
 	}
 }
 
-// handler funksiyasida jobs kanalini parametr sifatida uzatamiz
+// processJob bitta so'rovni ishlaydi (runner.Run panic'ni 500 ga aylantiradi —
+// shunday qilib yomon skript butun worker goroutinesini o'ldirmaydi).
+func processJob(job Job) runner.Response {
+	return runner.Run(job.File, job.BaseDir, job.Request)
+}
+
+// handler so'rovni mos faylga moslab worker'ga uzatadi.
 func handler(w http.ResponseWriter, r *http.Request, jobs chan<- Job) {
 	params := fcgi.ProcessEnv(r)
-	file := params["DOCUMENT_ROOT"] + params["DOCUMENT_URI"]
-	result := make(chan Result)
-	// Faylni workerga yuborish
-	jobs <- Job{File: file, Response: result, Request: r, BaseDir: params["DOCUMENT_ROOT"] + "/"}
-	res := <-result
-	for _, header := range res.Headers {
-		w.Header().Set(header.Key, header.Value)
+	root := filepath.Clean(params["DOCUMENT_ROOT"])
+	// filepath.Join "../" larni tozalaydi; natija DOCUMENT_ROOT ichida qolishi shart
+	file := filepath.Join(root, params["DOCUMENT_URI"])
+	if file != root && !strings.HasPrefix(file, root+string(os.PathSeparator)) {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("403 Forbidden"))
+		return
 	}
-	w.Write([]byte(res.Body))
+	result := make(chan runner.Response)
+	jobs <- Job{File: file, Response: result, Request: r, BaseDir: root + "/"}
+	(<-result).Apply(w)
 }
 
 func main() {
-	// jobs va results kanallarini yaratamiz
-	jobs := make(chan Job)
+	// web rejimida ffi (ixtiyoriy .so yuklash) o'chiriladi
+	os.Setenv("BUG_FPM", "1")
 
-	// Workerlarni ishga tushiramiz
-	for i := 0; i < 4; i++ { // 4 worker ishga tushirilsin
+	jobs := make(chan Job)
+	for range 4 { // 4 worker
 		go Worker(jobs)
 	}
 
-	// Handlerga jobs va results kanallarini uzatamiz
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handler(w, r, jobs)
 	})
 
-	// UNIX socketni ochamiz
 	sockPath := "/tmp/bug-fpm.sock"
 	os.Remove(sockPath)
 	listen, err := net.Listen("unix", sockPath)
@@ -132,10 +71,8 @@ func main() {
 
 	fmt.Println("Started server " + sockPath + " 🚀")
 
-	// FastCGI serverni ishga tushiramiz
 	go func() {
-		err := fcgi.Serve(listen, http.DefaultServeMux)
-		if err != nil {
+		if err := fcgi.Serve(listen, http.DefaultServeMux); err != nil {
 			fmt.Println("Xatolik:", err)
 		}
 	}()

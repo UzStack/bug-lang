@@ -1,6 +1,7 @@
 package libs
 
 import (
+	"os"
 	"plugin"
 	"reflect"
 
@@ -8,6 +9,10 @@ import (
 )
 
 func FFILoad(lib *types.StringValue) any {
+	// web (FPM) rejimida ixtiyoriy .so yuklash = RCE, shuning uchun o'chirilgan
+	if os.Getenv("BUG_FPM") == "1" {
+		panic("ffi web (fpm) rejimida o'chirilgan")
+	}
 	plg, err := plugin.Open(lib.Value)
 	if err != nil {
 		panic(err.Error())

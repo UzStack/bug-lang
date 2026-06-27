@@ -1,0 +1,25 @@
+import "sqldriver";
+
+// Ichki DB moduli — parametrli so'rovlar, .so plugin kerak emas.
+// Foydalanish:
+//   import "db";
+//   conn = new db.DB("host=localhost dbname=test user=postgres sslmode=disable");
+//   users = conn.query("select * from users where age > $1", [18]);
+//   conn.exec("insert into users(name) values($1)", ["Ali"]);
+class DB() {
+    func init(dsn, driver = "postgres") {
+        this.conn = sqldriver.connect(driver, dsn);
+    }
+
+    func query(sql, params = []) {
+        return sqldriver.query(this.conn, sql, params);
+    }
+
+    func exec(sql, params = []) {
+        return sqldriver.exec(this.conn, sql, params);
+    }
+
+    func close() {
+        return sqldriver.close(this.conn);
+    }
+}

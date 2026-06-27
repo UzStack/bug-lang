@@ -13,6 +13,21 @@ func Load(env *enviroment.Enviroment) {
 
 	env.DeclareVariable("input", types.NewNativeFunction(Input), -1)
 	env.DeclareVariable("header", types.NewNativeFunction(Header), -1)
+	env.DeclareVariable("status", types.NewNativeFunction(Status), -1)
+	env.DeclareVariable("redirect", types.NewNativeFunction(Redirect), -1)
+	env.DeclareVariable("cookie", types.NewNativeFunction(Cookie), -1)
+
+	// tip / introspeksiya / yordamchi funksiyalar
+	env.DeclareVariable("len", types.NewNativeFunction(Len), -1)
+	env.DeclareVariable("str", types.NewNativeFunction(Str), -1)
+	env.DeclareVariable("int", types.NewNativeFunction(Int), -1)
+	env.DeclareVariable("float", types.NewNativeFunction(Float), -1)
+	env.DeclareVariable("bool", types.NewNativeFunction(Bool), -1)
+	env.DeclareVariable("type", types.NewNativeFunction(TypeOf), -1)
+	env.DeclareVariable("format", types.NewNativeFunction(Format), -1)
+	env.DeclareVariable("assert", types.NewNativeFunction(Assert), -1)
+	env.DeclareVariable("throw", types.NewNativeFunction(Throw), -1)
+
 	env.DeclareVariable("true", types.NewBool(true), -1)
 	env.DeclareVariable("false", types.NewBool(false), -1)
 	env.DeclareVariable("null", types.NewNull(), -1)

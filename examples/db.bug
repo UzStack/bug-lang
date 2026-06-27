@@ -1,7 +1,18 @@
-import "psql";
+// Ichki DB moduli — parametrli so'rovlar, .so plugin kerak emas.
+import "db";
 
+conn = new db.DB("host=localhost port=5432 dbname=testdb user=postgres password=secret sslmode=disable");
 
-db = new psql.DB("db");
+// parametrli insert ($1, $2 — SQL injection oldini oladi)
+conn.exec("insert into users(name, age) values($1, $2)", ["Ali", 25]);
 
-query = db.query("select * from users");
-print(query.findAll());
+// parametrli select
+users = conn.query("select id, name, age from users where age > $1 order by age", [18]);
+i = 0;
+for (i < users.size()) {
+    u = users[i];
+    println(format("{}: {} ({})", u["id"], u["name"], u["age"]));
+    i = i + 1;
+}
+
+conn.close();

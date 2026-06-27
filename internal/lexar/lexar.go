@@ -65,8 +65,11 @@ func (t *tokenize) At() string {
 
 func (t *tokenize) FindString() error {
 	var str string
-	for t.At() != "\"" || t.Chars[t.Index-1] == "\\" {
+	for t.Index < len(t.Chars) && (t.At() != "\"" || t.Chars[t.Index-1] == "\\") {
 		str += t.Next()
+	}
+	if t.Index >= len(t.Chars) {
+		return fmt.Errorf("yopilmagan satr (string) line: %d", t.Line)
 	}
 	str, err := strconv.Unquote("\"" + str + "\"")
 	if err != nil {
@@ -77,11 +80,11 @@ func (t *tokenize) FindString() error {
 	return nil
 }
 
+// FindEnd bir qatorli kommentni qator oxirigacha (\n) yutadi.
 func (t *tokenize) FindEnd() {
-	for len(t.Chars) != t.Index+1 && t.At() != ";" {
+	for t.Index < len(t.Chars) && t.At() != "\n" {
 		t.Next()
 	}
-	t.Next()
 }
 
 func (t *tokenize) Tokenize(code string) ([]*Token, error) {
@@ -92,6 +95,7 @@ func (t *tokenize) Tokenize(code string) ([]*Token, error) {
 			t.Line++
 		}
 		if char == ":" {
+			t.Handle()
 			t.token(char, Colon)
 		}
 		if char == "\"" {
@@ -101,7 +105,7 @@ func (t *tokenize) Tokenize(code string) ([]*Token, error) {
 			}
 			continue
 		}
-		if char == "/" && t.Chars[t.Index] == "/" {
+		if char == "/" && t.Index < len(t.Chars) && t.At() == "/" {
 			t.Handle()
 			t.FindEnd()
 			continue
@@ -167,7 +171,7 @@ func (t *tokenize) Tokenize(code string) ([]*Token, error) {
 
 		if utils.InArray(char, []any{"=", "<", ">", "!", "&", "|"}) {
 			t.Handle()
-			if utils.InArray(t.At(), []any{"&", "|", "="}) {
+			if t.Index < len(t.Chars) && utils.InArray(t.At(), []any{"&", "|", "="}) {
 				t.token(char+t.Next(), BinaryOperator)
 			} else if char == "=" {
 				t.token(char, Equals)

@@ -36,6 +36,8 @@ const (
 	Else
 	New
 	As
+	Try
+	Catch
 
 	// Conditions / loops
 	For
@@ -67,4 +69,6 @@ var Keywords = map[string]TokenType{
 	"new":      New,
 	"import":   Import,
 	"as":       As,
+	"try":      Try,
+	"catch":    Catch,
 }
